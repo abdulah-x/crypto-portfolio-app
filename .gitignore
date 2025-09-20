@@ -57,7 +57,10 @@ backend/data/*.db
 backend/data/backup_*.db
 backend/data/test_backup_*.db
 
-# Test Files (Keep test scripts, ignore test data)
+# Test Files and Sample Data (exclude from repository)
+backend/test_*.py
+backend/seed_simple.py
+backend/app/database/seeds/sample_data.py
 backend/data/test_portfolio.db
 **/test_output/
 **/test_results/
