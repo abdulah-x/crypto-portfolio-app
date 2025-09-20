@@ -27,6 +27,7 @@ MANIFEST
 venv/
 env/
 ENV/
+.venv/
 .env
 .env.local
 .env.production
@@ -48,14 +49,29 @@ ENV/
 ehthumbs.db
 Thumbs.db
 
-# Database
+# Database Files (SQLite)
 *.db
 *.sqlite
 *.sqlite3
+backend/data/*.db
+backend/data/backup_*.db
+backend/data/test_backup_*.db
+
+# Test Files (Keep test scripts, ignore test data)
+backend/data/test_portfolio.db
+**/test_output/
+**/test_results/
 
 # Logs
 *.log
 logs/
+backend/logs/
+
+# Pytest Cache
+.pytest_cache/
+.cache/
+.coverage
+htmlcov/
 
 # Node.js (for future frontend)
 node_modules/
@@ -64,10 +80,65 @@ yarn-debug.log*
 yarn-error.log*
 .next/
 out/
+package-lock.json
+yarn.lock
 
 # Docker
 .docker/
+docker-compose.override.yml
 
 # API Keys and Secrets
 secrets/
 keys/
+*.key
+*.pem
+*.crt
+*.p12
+
+# Development and Temporary Files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment-specific files
+backend/.env
+backend/.env.local
+backend/.env.development
+backend/.env.production
+
+# Backup files created by editors
+*.orig
+*.backup
+
+# Coverage reports
+coverage.xml
+*.cover
+.hypothesis/
+
+# Development database backups (allow .env.example)
+backend/data/backup_crypto_portfolio_*.db
+
+# Windows specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# macOS specific
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux specific
+*~
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# FastAPI specific
+.mypy_cache/
+.dmypy.json
+dmypy.json
