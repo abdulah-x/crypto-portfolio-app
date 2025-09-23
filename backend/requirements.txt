@@ -45,3 +45,6 @@ asyncpg==0.29.0
 # Additional utilities
 cryptography==41.0.8
 aiofiles==23.2.1
+python-binance==1.0.19
+python-dotenv==1.0.0
+requests==2.31.0
