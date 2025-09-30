@@ -15,6 +15,8 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from database import SessionLocal, User, Asset, Trade, Transaction
+from core.dependencies import get_db, get_current_active_user
+from core.errors import NotFoundError, ValidationError, DatabaseError
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -45,17 +47,9 @@ class TradeHistoryResponse(BaseModel):
     page_size: int
     total_pages: int
 
-def get_db():
-    """Database dependency"""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 @router.get("/trades", response_model=Dict[str, Any])
 async def get_trade_history(
-    user_id: int = 1,
+    current_user: User = Depends(get_current_active_user),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(50, ge=1, le=1000, description="Items per page"),
     symbol: Optional[str] = Query(None, description="Filter by trading pair (e.g., BTCUSDT)"),
@@ -81,7 +75,7 @@ async def get_trade_history(
         query = (
             db.query(Trade, Asset.symbol.label('base_symbol'), Asset.symbol.label('quote_symbol'))
             .join(Asset, Trade.base_asset_id == Asset.id)
-            .filter(Trade.user_id == user_id)
+            .filter(Trade.user_id == current_user.id)
         )
         
         # Apply filters
@@ -157,11 +151,11 @@ async def get_trade_history(
         }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching trades: {str(e)}")
+        raise DatabaseError(f"Error fetching trades: {str(e)}")
 
 @router.get("/trades/stats", response_model=Dict[str, Any])
 async def get_trade_statistics(
-    user_id: int = 1,
+    current_user: User = Depends(get_current_active_user),
     days: int = Query(30, ge=1, le=365, description="Number of days to analyze"),
     db = Depends(get_db)
 ):
@@ -184,7 +178,7 @@ async def get_trade_statistics(
         
         # Get trades in the period
         trades = db.query(Trade).filter(
-            Trade.user_id == user_id,
+            Trade.user_id == current_user.id,
             Trade.executed_at >= start_date,
             Trade.executed_at <= end_date
         ).all()
@@ -192,7 +186,7 @@ async def get_trade_statistics(
         if not trades:
             return {
                 "success": True,
-                "user_id": user_id,
+                "user_id": current_user.id,
                 "period_days": days,
                 "stats": {
                     "total_trades": 0,
@@ -226,7 +220,7 @@ async def get_trade_statistics(
         
         return {
             "success": True,
-            "user_id": user_id,
+            "user_id": current_user.id,
             "period_days": days,
             "period_start": start_date.isoformat(),
             "period_end": end_date.isoformat(),
@@ -244,12 +238,12 @@ async def get_trade_statistics(
         }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error calculating trade statistics: {str(e)}")
+        raise DatabaseError(f"Error calculating trade statistics: {str(e)}")
 
 @router.get("/trades/{symbol}", response_model=Dict[str, Any])
 async def get_trades_by_symbol(
     symbol: str,
-    user_id: int = 1,
+    current_user: User = Depends(get_current_active_user),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of trades to return"),
     db = Depends(get_db)
 ):
@@ -258,7 +252,7 @@ async def get_trades_by_symbol(
     """
     try:
         trades = db.query(Trade).filter(
-            Trade.user_id == user_id,
+            Trade.user_id == current_user.id,
             Trade.symbol == symbol.upper()
         ).order_by(Trade.executed_at.desc()).limit(limit).all()
         
@@ -278,10 +272,10 @@ async def get_trades_by_symbol(
         return {
             "success": True,
             "symbol": symbol.upper(),
-            "user_id": user_id,
+            "user_id": current_user.id,
             "total_trades": len(trades_list),
             "trades": trades_list
         }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching trades for {symbol}: {str(e)}")
+        raise DatabaseError(f"Error fetching trades for {symbol}: {str(e)}")

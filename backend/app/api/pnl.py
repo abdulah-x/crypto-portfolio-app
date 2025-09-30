@@ -15,6 +15,8 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from database import SessionLocal, User, Asset, Holding, Trade, CurrentPrice
+from core.dependencies import get_db, get_current_active_user
+from core.errors import DatabaseError, ValidationError, NotFoundError
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -42,17 +44,9 @@ class PnLSummary(BaseModel):
     best_performer: Optional[Dict[str, Any]]
     worst_performer: Optional[Dict[str, Any]]
 
-def get_db():
-    """Database dependency"""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 @router.get("/pnl", response_model=Dict[str, Any])
 async def get_portfolio_pnl(
-    user_id: int = 1,
+    current_user: User = Depends(get_current_active_user),
     include_zero: bool = Query(False, description="Include assets with zero holdings"),
     db = Depends(get_db)
 ):
@@ -71,18 +65,18 @@ async def get_portfolio_pnl(
             db.query(Holding, Asset.symbol, CurrentPrice.price_usd)
             .join(Asset, Holding.asset_id == Asset.id)
             .outerjoin(CurrentPrice, Asset.id == CurrentPrice.asset_id)
-            .filter(Holding.user_id == user_id)
+            .filter(Holding.user_id == current_user.id)
         )
         
         if not include_zero:
-            holdings_query = holdings_query.filter(Holding.quantity > 0)
+            holdings_query = holdings_query.filter(Holding.total_quantity > 0)
         
         holdings_data = holdings_query.all()
         
         if not holdings_data:
             return {
                 "success": True,
-                "user_id": user_id,
+                "user_id": current_user.id,
                 "timestamp": datetime.utcnow().isoformat(),
                 "summary": {
                     "total_portfolio_value": 0,
@@ -109,9 +103,9 @@ async def get_portfolio_pnl(
             else:
                 current_price = Decimal(str(current_price))
             
-            quantity = holding[0].quantity
-            avg_buy_price = holding[0].average_price
-            total_cost = quantity * avg_buy_price
+            quantity = holding.total_quantity
+            avg_buy_price = holding.average_cost_usd
+            total_cost = holding.total_cost_usd
             current_value = quantity * current_price
             
             # Unrealized P&L
@@ -120,7 +114,7 @@ async def get_portfolio_pnl(
             
             # Get realized P&L from trades
             realized_trades = db.query(Trade).filter(
-                Trade.user_id == user_id,
+                Trade.user_id == current_user.id,
                 Trade.symbol.like(f"{symbol}%"),
                 Trade.realized_pnl_usd.isnot(None)
             ).all()
@@ -169,7 +163,7 @@ async def get_portfolio_pnl(
         
         return {
             "success": True,
-            "user_id": user_id,
+            "user_id": current_user.id,
             "timestamp": datetime.utcnow().isoformat(),
             "summary": {
                 "total_portfolio_value": float(total_portfolio_value),
@@ -190,11 +184,11 @@ async def get_portfolio_pnl(
         }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error calculating P&L: {str(e)}")
+        raise DatabaseError(f"Error calculating P&L: {str(e)}")
 
 @router.get("/pnl/history", response_model=Dict[str, Any])
 async def get_pnl_history(
-    user_id: int = 1,
+    current_user: User = Depends(get_current_active_user),
     days: int = Query(30, ge=1, le=365, description="Number of days for historical analysis"),
     db = Depends(get_db)
 ):
@@ -209,7 +203,7 @@ async def get_pnl_history(
         
         # Get all trades in the period for realized P&L
         trades = db.query(Trade).filter(
-            Trade.user_id == user_id,
+            Trade.user_id == current_user.id,
             Trade.executed_at >= start_date,
             Trade.realized_pnl_usd.isnot(None)
         ).order_by(Trade.executed_at).all()
@@ -247,7 +241,7 @@ async def get_pnl_history(
         
         return {
             "success": True,
-            "user_id": user_id,
+            "user_id": current_user.id,
             "period": {
                 "start_date": start_date.isoformat(),
                 "end_date": end_date.isoformat(),
@@ -264,12 +258,12 @@ async def get_pnl_history(
         }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching P&L history: {str(e)}")
+        raise DatabaseError(f"Error fetching P&L history: {str(e)}")
 
 @router.get("/pnl/{symbol}", response_model=Dict[str, Any])
 async def get_asset_pnl(
     symbol: str,
-    user_id: int = 1,
+    current_user: User = Depends(get_current_active_user),
     db = Depends(get_db)
 ):
     """
@@ -279,11 +273,11 @@ async def get_asset_pnl(
         # Get asset info
         asset = db.query(Asset).filter(Asset.symbol == symbol.upper()).first()
         if not asset:
-            raise HTTPException(status_code=404, detail=f"Asset {symbol} not found")
+            raise NotFoundError(f"Asset {symbol} not found")
         
         # Get holding
         holding = db.query(Holding).filter(
-            Holding.user_id == user_id,
+            Holding.user_id == current_user.id,
             Holding.asset_id == asset.id
         ).first()
         
@@ -291,7 +285,7 @@ async def get_asset_pnl(
             return {
                 "success": True,
                 "symbol": symbol.upper(),
-                "user_id": user_id,
+                "user_id": current_user.id,
                 "message": "No holdings found for this asset",
                 "pnl": {
                     "quantity": 0,
@@ -309,14 +303,14 @@ async def get_asset_pnl(
         
         # Get all trades for this asset
         trades = db.query(Trade).filter(
-            Trade.user_id == user_id,
+            Trade.user_id == current_user.id,
             Trade.symbol.like(f"{symbol.upper()}%")
         ).order_by(Trade.executed_at).all()
         
         # Calculate detailed P&L
-        quantity = holding.quantity
-        avg_buy_price = holding.average_price
-        total_cost = quantity * avg_buy_price
+        quantity = holding.total_quantity
+        avg_buy_price = holding.average_cost_usd
+        total_cost = holding.total_cost_usd
         current_value = quantity * current_price
         unrealized_pnl = current_value - total_cost
         
@@ -338,7 +332,7 @@ async def get_asset_pnl(
         return {
             "success": True,
             "symbol": symbol.upper(),
-            "user_id": user_id,
+            "user_id": current_user.id,
             "timestamp": datetime.utcnow().isoformat(),
             "current_holding": {
                 "quantity": float(quantity),
@@ -366,14 +360,14 @@ async def get_asset_pnl(
             }
         }
         
-    except HTTPException:
+    except (DatabaseError, NotFoundError):
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error calculating P&L for {symbol}: {str(e)}")
+        raise DatabaseError(f"Error calculating P&L for {symbol}: {str(e)}")
 
 @router.get("/realized", response_model=Dict[str, Any])
 async def get_realized_pnl(
-    user_id: int = 1,
+    current_user: User = Depends(get_current_active_user),
     days: int = Query(30, ge=1, le=365, description="Number of days to analyze"),
     db = Depends(get_db)
 ):
@@ -386,7 +380,7 @@ async def get_realized_pnl(
         
         # Get trades with realized P&L
         trades = db.query(Trade).filter(
-            Trade.user_id == user_id,
+            Trade.user_id == current_user.id,
             Trade.executed_at >= start_date,
             Trade.executed_at <= end_date,
             Trade.realized_pnl_usd.isnot(None)
@@ -395,7 +389,7 @@ async def get_realized_pnl(
         if not trades:
             return {
                 "success": True,
-                "user_id": user_id,
+                "user_id": current_user.id,
                 "period_days": days,
                 "summary": {
                     "total_realized_pnl": 0,
@@ -433,7 +427,7 @@ async def get_realized_pnl(
         
         return {
             "success": True,
-            "user_id": user_id,
+            "user_id": current_user.id,
             "period_days": days,
             "period_start": start_date.isoformat(),
             "period_end": end_date.isoformat(),
@@ -451,4 +445,4 @@ async def get_realized_pnl(
         }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching realized P&L: {str(e)}")
+        raise DatabaseError(f"Error fetching realized P&L: {str(e)}")

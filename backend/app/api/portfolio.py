@@ -15,6 +15,8 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from database import SessionLocal, User, Asset, Holding, CurrentPrice, PortfolioSnapshot
+from core.dependencies import get_db, get_current_active_user, get_optional_current_user
+from core.errors import NotFoundError, ValidationError, DatabaseError
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -43,16 +45,11 @@ class PortfolioSummary(BaseModel):
     last_updated: datetime
     holdings: List[AssetHolding]
 
-def get_db():
-    """Database dependency"""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 @router.get("/portfolio", response_model=Dict[str, Any])
-async def get_portfolio_summary(user_id: int = 1, db = Depends(get_db)):
+async def get_portfolio_summary(
+    current_user: User = Depends(get_current_active_user),
+    db = Depends(get_db)
+):
     """
     Get portfolio summary with all holdings
     
@@ -68,7 +65,7 @@ async def get_portfolio_summary(user_id: int = 1, db = Depends(get_db)):
             db.query(Holding, Asset, CurrentPrice)
             .join(Asset, Holding.asset_id == Asset.id)
             .outerjoin(CurrentPrice, Asset.id == CurrentPrice.asset_id)
-            .filter(Holding.user_id == user_id)
+            .filter(Holding.user_id == current_user.id)
             .filter(Holding.total_quantity > 0)
         )
         
@@ -77,7 +74,7 @@ async def get_portfolio_summary(user_id: int = 1, db = Depends(get_db)):
         if not holdings_data:
             return {
                 "message": "No holdings found for user",
-                "user_id": user_id,
+                "user_id": current_user.id,
                 "portfolio_summary": {
                     "total_portfolio_value_usd": 0,
                     "total_cost_usd": 0,
@@ -130,7 +127,7 @@ async def get_portfolio_summary(user_id: int = 1, db = Depends(get_db)):
         
         return {
             "success": True,
-            "user_id": user_id,
+            "user_id": current_user.id,
             "timestamp": datetime.utcnow().isoformat(),
             "portfolio_summary": {
                 "total_portfolio_value_usd": float(total_value),
@@ -144,23 +141,26 @@ async def get_portfolio_summary(user_id: int = 1, db = Depends(get_db)):
         }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching portfolio: {str(e)}")
+        raise DatabaseError(f"Error fetching portfolio: {str(e)}")
 
 @router.get("/overview", response_model=Dict[str, Any])
-async def get_portfolio_overview(user_id: int = 1, db = Depends(get_db)):
+async def get_portfolio_overview(
+    current_user: User = Depends(get_current_active_user),
+    db = Depends(get_db)
+):
     """
     Get condensed portfolio overview (just totals, no individual holdings)
     """
     try:
         # Query portfolio totals
         holdings = db.query(Holding).filter(
-            Holding.user_id == user_id,
+            Holding.user_id == current_user.id,
             Holding.total_quantity > 0
         ).all()
         
         if not holdings:
             return {
-                "user_id": user_id,
+                "user_id": current_user.id,
                 "total_value_usd": 0,
                 "total_cost_usd": 0,
                 "total_pnl_usd": 0,
@@ -175,7 +175,7 @@ async def get_portfolio_overview(user_id: int = 1, db = Depends(get_db)):
         
         return {
             "success": True,
-            "user_id": user_id,
+            "user_id": current_user.id,
             "timestamp": datetime.utcnow().isoformat(),
             "summary": {
                 "total_value_usd": float(total_value),
@@ -187,4 +187,4 @@ async def get_portfolio_overview(user_id: int = 1, db = Depends(get_db)):
         }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching portfolio summary: {str(e)}")
+        raise DatabaseError(f"Error fetching portfolio summary: {str(e)}")
