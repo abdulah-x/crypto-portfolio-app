@@ -28,6 +28,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Import and include API routers
+from api.portfolio import router as portfolio_router
+from api.trades import router as trades_router
+from api.pnl import router as pnl_router
+
+# Include API routes
+app.include_router(portfolio_router, prefix="/api", tags=["Portfolio"])
+app.include_router(trades_router, prefix="/api", tags=["Trades"])
+app.include_router(pnl_router, prefix="/api", tags=["P&L"])
+
 # Health check endpoint
 @app.get("/health")
 async def health_check():
@@ -67,7 +77,10 @@ async def api_info():
         "endpoints": {
             "health": "/health",
             "docs": "/docs",
-            "redoc": "/redoc"
+            "redoc": "/redoc",
+            "portfolio": "/api/portfolio",
+            "trades": "/api/trades",
+            "pnl": "/api/pnl"
         }
     }
 

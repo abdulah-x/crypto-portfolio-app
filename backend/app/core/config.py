@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     
     # Binance API (will be used later)
     binance_api_key: Optional[str] = None
-    binance_api_secret: Optional[str] = None
+    binance_secret_key: Optional[str] = None
     binance_testnet: bool = True
     
     # CORS Configuration
