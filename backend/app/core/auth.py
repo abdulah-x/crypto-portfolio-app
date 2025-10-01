@@ -14,7 +14,7 @@ import secrets
 from core.config import settings
 from database.models import User, UserSession
 
-# Password hashing context
+# Password hashing context - simplified for compatibility
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class AuthManager:
@@ -27,11 +27,37 @@ class AuthManager:
     
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         """Verify a password against its hash"""
-        return pwd_context.verify(plain_password, hashed_password)
+        try:
+            # Ensure password is string and handle encoding properly
+            if not isinstance(plain_password, str):
+                plain_password = str(plain_password)
+            
+            # Truncate to 72 bytes if necessary (bcrypt limitation)
+            password_bytes = plain_password.encode('utf-8')
+            if len(password_bytes) > 72:
+                plain_password = password_bytes[:72].decode('utf-8', errors='ignore')
+            
+            return pwd_context.verify(plain_password, hashed_password)
+        except Exception as e:
+            print(f"Password verification error: {e}")
+            return False
     
     def get_password_hash(self, password: str) -> str:
         """Hash a password"""
-        return pwd_context.hash(password)
+        try:
+            # Ensure password is string and handle encoding properly
+            if not isinstance(password, str):
+                password = str(password)
+            
+            # Truncate to 72 bytes if necessary (bcrypt limitation)
+            password_bytes = password.encode('utf-8')
+            if len(password_bytes) > 72:
+                password = password_bytes[:72].decode('utf-8', errors='ignore')
+            
+            return pwd_context.hash(password)
+        except Exception as e:
+            print(f"Password hashing error: {e}")
+            raise e
     
     def create_access_token(self, data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
         """Create a JWT access token"""
@@ -51,10 +77,11 @@ class AuthManager:
         try:
             payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
             return payload
-        except JWTError:
+        except JWTError as e:
+            print(f"JWT Decode Error: {e}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication token",
+                detail=f"Invalid authentication token: {str(e)}",
                 headers={"WWW-Authenticate": "Bearer"},
             )
     

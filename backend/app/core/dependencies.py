@@ -36,6 +36,11 @@ async def get_current_user(
         raise AuthenticationError("Authentication token required")
     
     try:
+        # Debug: Print the received token
+        print(f"DEBUG - Received token: '{credentials.credentials}'")
+        print(f"DEBUG - Token length: {len(credentials.credentials)}")
+        print(f"DEBUG - Token segments: {len(credentials.credentials.split('.'))}")
+        
         # Verify the JWT token
         payload = auth_manager.verify_token(credentials.credentials)
         user_id: int = payload.get("sub")
@@ -57,7 +62,9 @@ async def get_current_user(
     except Exception as e:
         if isinstance(e, (AuthenticationError, AuthorizationError)):
             raise e
-        raise AuthenticationError("Invalid authentication token")
+        # Log the actual error for debugging
+        print(f"JWT Verification Error: {type(e).__name__}: {e}")
+        raise AuthenticationError(f"Invalid authentication token: {str(e)}")
 
 async def get_current_active_user(
     current_user: User = Depends(get_current_user)

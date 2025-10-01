@@ -106,6 +106,34 @@ async def api_info():
         }
     }
 
+# Debug endpoint to test token parsing
+@app.get("/api/debug-token")
+async def debug_token(request: Request):
+    """
+    Debug endpoint to see exactly what token is being received
+    """
+    auth_header = request.headers.get("authorization")
+    print(f"🔍 DEBUG - Full Authorization header: '{auth_header}'")
+    
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header[7:]  # Remove "Bearer " prefix
+        print(f"🔍 DEBUG - Extracted token: '{token}'")
+        print(f"🔍 DEBUG - Token length: {len(token)}")
+        print(f"🔍 DEBUG - Token segments: {len(token.split('.'))}")
+        
+        return {
+            "received_header": auth_header,
+            "extracted_token": token,
+            "token_length": len(token),
+            "token_segments": len(token.split('.')),
+            "first_50_chars": token[:50] if len(token) > 50 else token
+        }
+    
+    return {
+        "received_header": auth_header,
+        "error": "No Bearer token found"
+    }
+
 # Register error handlers
 app.add_exception_handler(APIError, api_error_handler)
 app.add_exception_handler(RequestValidationError, validation_error_handler)
