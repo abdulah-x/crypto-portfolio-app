@@ -43,10 +43,16 @@ async def get_current_user(
         
         # Verify the JWT token
         payload = auth_manager.verify_token(credentials.credentials)
-        user_id: int = payload.get("sub")
+        user_id_str: str = payload.get("sub")
         
-        if user_id is None:
+        if user_id_str is None:
             raise AuthenticationError("Invalid token payload")
+        
+        # Convert user_id from string to integer
+        try:
+            user_id = int(user_id_str)
+        except (ValueError, TypeError):
+            raise AuthenticationError("Invalid user ID in token")
         
         # Get user from database
         user = db.query(User).filter(User.id == user_id).first()

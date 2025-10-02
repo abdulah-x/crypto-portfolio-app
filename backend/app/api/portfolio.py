@@ -188,3 +188,75 @@ async def get_portfolio_overview(
         
     except Exception as e:
         raise DatabaseError(f"Error fetching portfolio summary: {str(e)}")
+
+@router.get("/portfolio/summary", response_model=Dict[str, Any])
+async def get_portfolio_summary_alias(
+    current_user: User = Depends(get_current_active_user),
+    db = Depends(get_db)
+):
+    """
+    Portfolio summary (alias to main portfolio endpoint)
+    Returns the same data as /api/portfolio
+    """
+    return await get_portfolio_summary(current_user, db)
+
+@router.get("/portfolio/holdings", response_model=Dict[str, Any])
+async def get_portfolio_holdings(
+    current_user: User = Depends(get_current_active_user),
+    db = Depends(get_db)
+):
+    """
+    Get just the holdings data from portfolio
+    """
+    try:
+        # Get full portfolio data
+        portfolio_data = await get_portfolio_summary(current_user, db)
+        
+        # Extract just the holdings
+        holdings = portfolio_data.get("portfolio_summary", {}).get("holdings", [])
+        
+        return {
+            "success": True,
+            "user_id": current_user.id,
+            "timestamp": datetime.utcnow().isoformat(),
+            "holdings": holdings,
+            "total_holdings": len(holdings)
+        }
+        
+    except Exception as e:
+        raise DatabaseError(f"Error fetching portfolio holdings: {str(e)}")
+
+@router.get("/portfolio/performance", response_model=Dict[str, Any])
+async def get_portfolio_performance(
+    current_user: User = Depends(get_current_active_user),
+    db = Depends(get_db)
+):
+    """
+    Get portfolio performance metrics
+    """
+    try:
+        # Get full portfolio data
+        portfolio_data = await get_portfolio_summary(current_user, db)
+        portfolio_summary = portfolio_data.get("portfolio_summary", {})
+        
+        # Extract performance metrics
+        return {
+            "success": True,
+            "user_id": current_user.id,
+            "timestamp": datetime.utcnow().isoformat(),
+            "performance": {
+                "total_portfolio_value_usd": portfolio_summary.get("total_portfolio_value_usd", 0),
+                "total_cost_usd": portfolio_summary.get("total_cost_usd", 0),
+                "total_unrealized_pnl_usd": portfolio_summary.get("total_unrealized_pnl_usd", 0),
+                "total_unrealized_pnl_percentage": portfolio_summary.get("total_unrealized_pnl_percentage", 0),
+                "asset_count": portfolio_summary.get("asset_count", 0),
+                "performance_summary": {
+                    "is_profitable": portfolio_summary.get("total_unrealized_pnl_usd", 0) > 0,
+                    "performance_grade": "Positive" if portfolio_summary.get("total_unrealized_pnl_usd", 0) > 0 else "Negative",
+                    "last_updated": portfolio_summary.get("last_updated")
+                }
+            }
+        }
+        
+    except Exception as e:
+        raise DatabaseError(f"Error fetching portfolio performance: {str(e)}")

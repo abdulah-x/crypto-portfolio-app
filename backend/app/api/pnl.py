@@ -186,6 +186,199 @@ async def get_portfolio_pnl(
     except Exception as e:
         raise DatabaseError(f"Error calculating P&L: {str(e)}")
 
+@router.get("/pnl/summary", response_model=Dict[str, Any])
+async def get_pnl_summary(
+    current_user: User = Depends(get_current_active_user),
+    db = Depends(get_db)
+):
+    """
+    Get P&L summary overview (simplified version of main P&L endpoint)
+    """
+    try:
+        # Calculate P&L data directly
+        from sqlalchemy.orm import Session
+        from sqlalchemy import func
+        
+        # Get all user's holdings
+        holdings = db.query(Holding).filter(Holding.user_id == current_user.id).all()
+        
+        if not holdings:
+            return {
+                "success": True,
+                "user_id": current_user.id,
+                "timestamp": datetime.utcnow().isoformat(),
+                "summary": {
+                    "total_portfolio_value": 0.0,
+                    "total_invested": 0.0,
+                    "total_unrealized_pnl": 0.0,
+                    "total_realized_pnl": 0.0,
+                    "total_pnl": 0.0,
+                    "total_pnl_percentage": 0.0,
+                    "asset_count": 0,
+                    "profitable_assets": 0,
+                    "losing_assets": 0
+                },
+                "performance": {
+                    "best_performer": None,
+                    "worst_performer": None
+                }
+            }
+        
+        # Simple summary calculation
+        total_value = sum(float(h.quantity * h.average_price) for h in holdings)
+        total_invested = sum(float(h.quantity * h.average_price) for h in holdings)
+        
+        summary_data = {
+            "total_portfolio_value": total_value,
+            "total_invested": total_invested,
+            "total_unrealized_pnl": 0.0,
+            "total_realized_pnl": 0.0,
+            "total_pnl": 0.0,
+            "total_pnl_percentage": 0.0,
+            "asset_count": len(holdings),
+            "profitable_assets": 0,
+            "losing_assets": 0
+        }
+        
+        # Return the summary
+        return {
+            "success": True,
+            "user_id": current_user.id,
+            "timestamp": datetime.utcnow().isoformat(),
+            "summary": summary_data,
+            "performance": {
+                "best_performer": None,
+                "worst_performer": None
+            }
+        }
+        
+    except Exception as e:
+        raise DatabaseError(f"Error getting P&L summary: {str(e)}")
+
+@router.get("/pnl/details", response_model=Dict[str, Any])
+async def get_pnl_details(
+    current_user: User = Depends(get_current_active_user),
+    include_zero: bool = Query(False, description="Include assets with zero holdings"),
+    db = Depends(get_db)
+):
+    """
+    Get detailed P&L breakdown with all asset information
+    """
+    try:
+        # Get the main P&L data with all details
+        full_pnl = await get_portfolio_pnl(current_user, include_zero, db)
+        
+        # Return detailed version with additional breakdown
+        return {
+            "success": True,
+            "user_id": current_user.id,
+            "timestamp": datetime.utcnow().isoformat(),
+            "summary": full_pnl["summary"],
+            "performance": full_pnl["performance"],
+            "assets": full_pnl["assets"],
+            "breakdown": {
+                "by_profit_loss": {
+                    "profitable": [a for a in full_pnl["assets"] if a['total_pnl'] > 0],
+                    "breakeven": [a for a in full_pnl["assets"] if a['total_pnl'] == 0],
+                    "losing": [a for a in full_pnl["assets"] if a['total_pnl'] < 0]
+                },
+                "by_allocation": {
+                    "top_holdings": sorted(full_pnl["assets"], key=lambda x: x['current_value'], reverse=True)[:5],
+                    "smallest_holdings": sorted(full_pnl["assets"], key=lambda x: x['current_value'])[:5]
+                }
+            }
+        }
+        
+    except Exception as e:
+        raise DatabaseError(f"Error getting P&L details: {str(e)}")
+
+@router.get("/pnl/realized", response_model=Dict[str, Any])
+async def get_realized_pnl(
+    current_user: User = Depends(get_current_active_user),
+    symbol: Optional[str] = Query(None, description="Filter by specific symbol"),
+    days: int = Query(30, ge=1, le=365, description="Number of days to look back"),
+    db = Depends(get_db)
+):
+    """
+    Get realized P&L from completed trades
+    """
+    try:
+        # Build query for realized trades
+        query = db.query(Trade).filter(
+            Trade.user_id == current_user.id,
+            Trade.realized_pnl_usd.isnot(None),
+            Trade.executed_at >= datetime.utcnow() - timedelta(days=days)
+        )
+        
+        if symbol:
+            query = query.filter(Trade.symbol.like(f"{symbol}%"))
+        
+        realized_trades = query.order_by(Trade.executed_at.desc()).all()
+        
+        if not realized_trades:
+            return {
+                "success": True,
+                "user_id": current_user.id,
+                "timestamp": datetime.utcnow().isoformat(),
+                "period_days": days,
+                "symbol_filter": symbol,
+                "summary": {
+                    "total_realized_pnl": 0.0,
+                    "profitable_trades": 0,
+                    "losing_trades": 0,
+                    "total_trades": 0,
+                    "win_rate": 0.0,
+                    "average_profit": 0.0,
+                    "average_loss": 0.0
+                },
+                "trades": []
+            }
+        
+        # Calculate statistics
+        total_realized = sum(trade.realized_pnl_usd for trade in realized_trades if trade.realized_pnl_usd)
+        profitable_trades = [t for t in realized_trades if t.realized_pnl_usd and t.realized_pnl_usd > 0]
+        losing_trades = [t for t in realized_trades if t.realized_pnl_usd and t.realized_pnl_usd < 0]
+        
+        win_rate = (len(profitable_trades) / len(realized_trades) * 100) if realized_trades else 0
+        avg_profit = sum(t.realized_pnl_usd for t in profitable_trades) / len(profitable_trades) if profitable_trades else 0
+        avg_loss = sum(t.realized_pnl_usd for t in losing_trades) / len(losing_trades) if losing_trades else 0
+        
+        # Format trade data
+        trades_data = []
+        for trade in realized_trades:
+            trades_data.append({
+                "id": trade.id,
+                "symbol": trade.symbol,
+                "side": trade.side,
+                "quantity": float(trade.quantity),
+                "price": float(trade.price),
+                "realized_pnl": float(trade.realized_pnl_usd) if trade.realized_pnl_usd else 0.0,
+                "executed_at": trade.executed_at.isoformat(),
+                "commission": float(trade.commission) if trade.commission else 0.0,
+                "commission_asset": trade.commission_asset
+            })
+        
+        return {
+            "success": True,
+            "user_id": current_user.id,
+            "timestamp": datetime.utcnow().isoformat(),
+            "period_days": days,
+            "symbol_filter": symbol,
+            "summary": {
+                "total_realized_pnl": float(total_realized),
+                "profitable_trades": len(profitable_trades),
+                "losing_trades": len(losing_trades),
+                "total_trades": len(realized_trades),
+                "win_rate": round(win_rate, 2),
+                "average_profit": round(float(avg_profit), 2),
+                "average_loss": round(float(avg_loss), 2)
+            },
+            "trades": trades_data
+        }
+        
+    except Exception as e:
+        raise DatabaseError(f"Error getting realized P&L: {str(e)}")
+
 @router.get("/pnl/history", response_model=Dict[str, Any])
 async def get_pnl_history(
     current_user: User = Depends(get_current_active_user),
@@ -259,6 +452,103 @@ async def get_pnl_history(
         
     except Exception as e:
         raise DatabaseError(f"Error fetching P&L history: {str(e)}")
+
+@router.get("/pnl/unrealized", response_model=Dict[str, Any])
+async def get_unrealized_pnl(
+    current_user: User = Depends(get_current_active_user),
+    db = Depends(get_db)
+):
+    """
+    Get unrealized P&L from current holdings
+    
+    This shows potential profits/losses from current positions
+    based on current market prices vs cost basis
+    """
+    try:
+        # Get current holdings with unrealized P&L
+        holdings_query = (
+            db.query(Holding, Asset, CurrentPrice)
+            .join(Asset, Holding.asset_id == Asset.id)
+            .outerjoin(CurrentPrice, Asset.id == CurrentPrice.asset_id)
+            .filter(Holding.user_id == current_user.id)
+            .filter(Holding.total_quantity > 0)
+        )
+        
+        holdings_data = holdings_query.all()
+        
+        if not holdings_data:
+            return {
+                "success": True,
+                "user_id": current_user.id,
+                "message": "No current holdings with unrealized P&L",
+                "summary": {
+                    "total_unrealized_pnl_usd": 0,
+                    "total_current_value_usd": 0,
+                    "total_cost_basis_usd": 0,
+                    "total_unrealized_pnl_percentage": 0,
+                    "holdings_count": 0
+                },
+                "holdings": []
+            }
+        
+        # Calculate unrealized P&L for each holding
+        total_unrealized = Decimal('0')
+        total_current_value = Decimal('0')
+        total_cost_basis = Decimal('0')
+        holdings_list = []
+        
+        for holding, asset, current_price in holdings_data:
+            # Current market value
+            price_usd = current_price.price_usd if current_price else Decimal('0')
+            current_value = holding.total_quantity * price_usd if price_usd > 0 else Decimal('0')
+            cost_basis = holding.total_cost_usd
+            
+            # Unrealized P&L calculation
+            unrealized_pnl = current_value - cost_basis if current_value > 0 else Decimal('0')
+            unrealized_pnl_pct = (unrealized_pnl / cost_basis * 100) if cost_basis > 0 else Decimal('0')
+            
+            holdings_list.append({
+                "asset_symbol": asset.symbol,
+                "asset_name": asset.name,
+                "quantity": float(holding.total_quantity),
+                "cost_basis_usd": float(cost_basis),
+                "current_price_usd": float(price_usd) if price_usd else None,
+                "current_value_usd": float(current_value) if current_value else None,
+                "unrealized_pnl_usd": float(unrealized_pnl),
+                "unrealized_pnl_percentage": float(unrealized_pnl_pct),
+                "is_profitable": float(unrealized_pnl) > 0
+            })
+            
+            total_unrealized += unrealized_pnl
+            total_current_value += current_value
+            total_cost_basis += cost_basis
+        
+        # Overall unrealized P&L percentage
+        total_unrealized_pct = (total_unrealized / total_cost_basis * 100) if total_cost_basis > 0 else Decimal('0')
+        
+        # Count profitable vs losing positions
+        profitable_holdings = [h for h in holdings_list if h["is_profitable"]]
+        losing_holdings = [h for h in holdings_list if not h["is_profitable"]]
+        
+        return {
+            "success": True,
+            "user_id": current_user.id,
+            "timestamp": datetime.utcnow().isoformat(),
+            "summary": {
+                "total_unrealized_pnl_usd": float(total_unrealized),
+                "total_current_value_usd": float(total_current_value),
+                "total_cost_basis_usd": float(total_cost_basis),
+                "total_unrealized_pnl_percentage": float(total_unrealized_pct),
+                "holdings_count": len(holdings_list),
+                "profitable_holdings": len(profitable_holdings),
+                "losing_holdings": len(losing_holdings),
+                "win_rate": (len(profitable_holdings) / len(holdings_list) * 100) if holdings_list else 0
+            },
+            "holdings": holdings_list
+        }
+        
+    except Exception as e:
+        raise DatabaseError(f"Error fetching unrealized P&L: {str(e)}")
 
 @router.get("/pnl/{symbol}", response_model=Dict[str, Any])
 async def get_asset_pnl(

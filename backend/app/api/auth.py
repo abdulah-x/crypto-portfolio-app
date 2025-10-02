@@ -140,7 +140,7 @@ async def register_user(
         db.refresh(new_user)
         
         # Create access token
-        token_data = {"sub": new_user.id, "username": new_user.username}
+        token_data = {"sub": str(new_user.id), "username": new_user.username}
         access_token = auth_manager.create_access_token(token_data)
         
         # Create user session
@@ -192,7 +192,7 @@ async def login_user(
             raise AuthenticationError("Account is disabled")
         
         # Create access token
-        token_data = {"sub": user.id, "username": user.username}
+        token_data = {"sub": str(user.id), "username": user.username}
         access_token = auth_manager.create_access_token(token_data)
         
         # Create user session
@@ -224,6 +224,23 @@ async def login_user(
     except Exception as e:
         raise DatabaseError(f"Login failed: {str(e)}")
 
+@router.get("/auth/logout")
+async def logout_user_get(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Logout current user (GET method for compatibility)
+    """
+    try:
+        # For now, we'll just return success since we don't track individual sessions by token
+        # In a production system, you'd want to maintain a blacklist of tokens
+        
+        return {"message": "Successfully logged out", "method": "GET"}
+        
+    except Exception as e:
+        raise DatabaseError(f"Logout failed: {str(e)}")
+
 @router.post("/auth/logout")
 async def logout_user(
     current_user: User = Depends(get_current_active_user),
@@ -236,7 +253,7 @@ async def logout_user(
         # For now, we'll just return success since we don't track individual sessions by token
         # In a production system, you'd want to maintain a blacklist of tokens
         
-        return {"message": "Successfully logged out"}
+        return {"message": "Successfully logged out", "method": "POST"}
         
     except Exception as e:
         raise DatabaseError(f"Logout failed: {str(e)}")
