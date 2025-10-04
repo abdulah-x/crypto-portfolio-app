@@ -13,6 +13,7 @@ from database.connection import SessionLocal
 from database.models import User, UserSession
 from core.auth import auth_manager
 from core.errors import AuthenticationError, AuthorizationError
+from core.redis_client import redis_client
 
 # Security scheme
 security = HTTPBearer(auto_error=False)
@@ -36,10 +37,9 @@ async def get_current_user(
         raise AuthenticationError("Authentication token required")
     
     try:
-        # Debug: Print the received token
-        print(f"DEBUG - Received token: '{credentials.credentials}'")
-        print(f"DEBUG - Token length: {len(credentials.credentials)}")
-        print(f"DEBUG - Token segments: {len(credentials.credentials.split('.'))}")
+        # Check if token is blacklisted (logged out)
+        if redis_client.is_token_blacklisted(credentials.credentials):
+            raise AuthenticationError("Token has been invalidated")
         
         # Verify the JWT token
         payload = auth_manager.verify_token(credentials.credentials)

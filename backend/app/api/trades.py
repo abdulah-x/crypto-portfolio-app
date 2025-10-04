@@ -251,6 +251,22 @@ async def get_trades_by_symbol(
     Get trade history for a specific trading pair
     """
     try:
+        # Enhanced input validation to prevent SQL injection
+        import re
+        
+        # Validate symbol format (only alphanumeric characters and common trading pair separators)
+        if not re.match(r'^[A-Za-z0-9/\-_]{1,20}$', symbol):
+            raise HTTPException(status_code=400, detail="Invalid symbol format")
+        
+        # Additional validation for common SQL injection patterns
+        dangerous_patterns = [
+            "'", '"', ';', '--', '/*', '*/', 'union', 'select', 'drop', 'delete', 'insert', 'update'
+        ]
+        symbol_lower = symbol.lower()
+        for pattern in dangerous_patterns:
+            if pattern in symbol_lower:
+                raise HTTPException(status_code=400, detail="Invalid symbol characters detected")
+        
         trades = db.query(Trade).filter(
             Trade.user_id == current_user.id,
             Trade.symbol == symbol.upper()
@@ -277,6 +293,9 @@ async def get_trades_by_symbol(
             "trades": trades_list
         }
         
+    except HTTPException:
+        # Re-raise HTTP exceptions (like validation errors) without converting them
+        raise
     except Exception as e:
         raise DatabaseError(f"Error fetching trades for {symbol}: {str(e)}")
 

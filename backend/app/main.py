@@ -53,12 +53,60 @@ from api.auth import router as auth_router
 from api.portfolio import router as portfolio_router
 from api.trades import router as trades_router
 from api.pnl import router as pnl_router
+from api.binance_test import router as binance_test_router
+
+# Import advanced features with error handling
+try:
+    from api.portfolio_sync import router as portfolio_sync_router
+    PORTFOLIO_SYNC_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Portfolio Sync import failed: {e}")
+    PORTFOLIO_SYNC_AVAILABLE = False
+
+try:
+    from api.trade_import import router as trade_import_router
+    TRADE_IMPORT_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Trade Import import failed: {e}")
+    TRADE_IMPORT_AVAILABLE = False
+
+try:
+    from api.realtime_prices import router as realtime_prices_router
+    REALTIME_PRICES_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Real-time Prices import failed: {e}")
+    REALTIME_PRICES_AVAILABLE = False
+
+try:
+    from api.advanced_pnl import router as advanced_pnl_router
+    ADVANCED_PNL_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Advanced P&L import failed: {e}")
+    ADVANCED_PNL_AVAILABLE = False
 
 # Include API routes
 app.include_router(auth_router, prefix="/api", tags=["Authentication"])
 app.include_router(portfolio_router, prefix="/api", tags=["Portfolio"])
 app.include_router(trades_router, prefix="/api", tags=["Trades"])
 app.include_router(pnl_router, prefix="/api", tags=["P&L"])
+app.include_router(binance_test_router, prefix="/api", tags=["Binance Testing"])
+
+# Include advanced features if available
+if PORTFOLIO_SYNC_AVAILABLE:
+    app.include_router(portfolio_sync_router, prefix="/api", tags=["Portfolio Sync"])
+    print("✅ Portfolio Sync routes registered")
+
+if TRADE_IMPORT_AVAILABLE:
+    app.include_router(trade_import_router, prefix="/api", tags=["Trade Import"])
+    print("✅ Trade Import routes registered")
+
+if REALTIME_PRICES_AVAILABLE:
+    app.include_router(realtime_prices_router, prefix="/api", tags=["Real-time Prices"])
+    print("✅ Real-time Prices routes registered")
+
+if ADVANCED_PNL_AVAILABLE:
+    app.include_router(advanced_pnl_router, prefix="/api", tags=["Advanced P&L"])
+    print("✅ Advanced P&L routes registered")
 
 # Health check endpoint
 @app.get("/health")

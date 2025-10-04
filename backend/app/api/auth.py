@@ -5,7 +5,7 @@ User registration, login, logout, profile management
 """
 
 from fastapi import APIRouter, Depends, Request, status
-from fastapi.security import HTTPBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, validator
 from typing import Optional, Dict, Any
@@ -21,8 +21,16 @@ from core.errors import (
     DatabaseError
 )
 from database.models import User, UserSession
+from core.redis_client import redis_client
 
 router = APIRouter()
+
+# Security scheme for token extraction
+security = HTTPBearer()
+
+async def get_current_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    """Extract the current JWT token"""
+    return credentials.credentials
 
 # Pydantic models for requests and responses
 class UserRegistration(BaseModel):
@@ -244,16 +252,42 @@ async def logout_user_get(
 @router.post("/auth/logout")
 async def logout_user(
     current_user: User = Depends(get_current_active_user),
+    current_token: str = Depends(get_current_token),
     db: Session = Depends(get_db)
 ):
     """
     Logout current user (invalidate current session)
     """
     try:
-        # For now, we'll just return success since we don't track individual sessions by token
-        # In a production system, you'd want to maintain a blacklist of tokens
+        # Get token expiration time to set blacklist expiration
+        payload = auth_manager.verify_token(current_token)
+        exp_timestamp = payload.get("exp", 0)
+        current_timestamp = datetime.utcnow().timestamp()
         
-        return {"message": "Successfully logged out", "method": "POST"}
+        # Calculate remaining time until token expires
+        remaining_seconds = max(0, int(exp_timestamp - current_timestamp))
+        
+        # Blacklist the token for its remaining lifetime
+        if remaining_seconds > 0:
+            success = redis_client.blacklist_token(current_token, remaining_seconds)
+            if success:
+                return {
+                    "message": "Successfully logged out", 
+                    "method": "POST",
+                    "token_invalidated": True
+                }
+            else:
+                return {
+                    "message": "Logged out (token blacklisting unavailable)", 
+                    "method": "POST",
+                    "token_invalidated": False
+                }
+        else:
+            return {
+                "message": "Successfully logged out (token already expired)", 
+                "method": "POST",
+                "token_invalidated": True
+            }
         
     except Exception as e:
         raise DatabaseError(f"Logout failed: {str(e)}")
@@ -261,15 +295,29 @@ async def logout_user(
 @router.post("/auth/logout-all")
 async def logout_all_devices(
     current_user: User = Depends(get_current_active_user),
+    current_token: str = Depends(get_current_token),
     db: Session = Depends(get_db)
 ):
     """
     Logout from all devices (invalidate all user sessions)
     """
     try:
+        # Invalidate database sessions
         auth_manager.invalidate_user_sessions(db, current_user.id)
         
-        return {"message": "Successfully logged out from all devices"}
+        # Also blacklist current token
+        payload = auth_manager.verify_token(current_token)
+        exp_timestamp = payload.get("exp", 0)
+        current_timestamp = datetime.utcnow().timestamp()
+        remaining_seconds = max(0, int(exp_timestamp - current_timestamp))
+        
+        if remaining_seconds > 0:
+            redis_client.blacklist_token(current_token, remaining_seconds)
+        
+        return {
+            "message": "Successfully logged out from all devices",
+            "current_token_invalidated": True
+        }
         
     except Exception as e:
         raise DatabaseError(f"Logout all failed: {str(e)}")
