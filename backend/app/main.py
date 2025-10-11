@@ -112,13 +112,82 @@ if ADVANCED_PNL_AVAILABLE:
 @app.get("/health")
 async def health_check():
     """
-    Health check endpoint to verify API is running
+    Comprehensive health check endpoint to verify API and all features
     """
+    # Check database connectivity
+    try:
+        from database.connection import SessionLocal
+        from sqlalchemy import text
+        db_session = SessionLocal()
+        # Simple query to test DB
+        db_session.execute(text("SELECT 1"))
+        db_session.close()
+        db_status = "healthy"
+        db_error = None
+    except Exception as e:
+        db_status = "unhealthy"
+        db_error = str(e)
+    
+    # Check Binance connectivity (if available)
+    binance_status = "not_configured"
+    binance_error = None
+    try:
+        from services.binance.client import BinanceClientManager
+        client = BinanceClientManager()
+        # Test connection (this is lightweight)
+        binance_status = "healthy" if client.client else "unhealthy"
+    except Exception as e:
+        binance_status = "unhealthy"
+        binance_error = str(e)
+    
+    # Advanced features health
+    features_health = {
+        "portfolio_sync": {
+            "available": PORTFOLIO_SYNC_AVAILABLE,
+            "status": "healthy" if PORTFOLIO_SYNC_AVAILABLE else "unavailable"
+        },
+        "trade_import": {
+            "available": TRADE_IMPORT_AVAILABLE,
+            "status": "healthy" if TRADE_IMPORT_AVAILABLE else "unavailable"
+        },
+        "realtime_prices": {
+            "available": REALTIME_PRICES_AVAILABLE,
+            "status": "healthy" if REALTIME_PRICES_AVAILABLE else "unavailable"
+        },
+        "advanced_pnl": {
+            "available": ADVANCED_PNL_AVAILABLE,
+            "status": "healthy" if ADVANCED_PNL_AVAILABLE else "unavailable"
+        }
+    }
+    
+    # Overall status
+    overall_healthy = (
+        db_status == "healthy" and
+        binance_status in ["healthy", "not_configured"] and
+        all(f["status"] in ["healthy", "unavailable"] for f in features_health.values())
+    )
+    
     return {
-        "status": "healthy",
+        "status": "healthy" if overall_healthy else "degraded",
         "timestamp": datetime.utcnow().isoformat(),
         "version": settings.version,
-        "app_name": settings.app_name
+        "app_name": settings.app_name,
+        "components": {
+            "database": {
+                "status": db_status,
+                "error": db_error
+            },
+            "binance_api": {
+                "status": binance_status,
+                "error": binance_error
+            },
+            "advanced_features": features_health
+        },
+        "summary": {
+            "total_features": len(features_health),
+            "available_features": sum(1 for f in features_health.values() if f["available"]),
+            "healthy_components": sum(1 for status in [db_status, binance_status] if status == "healthy")
+        }
     }
 
 # Root endpoint
@@ -140,17 +209,65 @@ async def api_info():
     """
     Get API information and available endpoints
     """
+    # Core endpoints
+    core_endpoints = {
+        "health": "/health",
+        "docs": "/docs",
+        "redoc": "/redoc",
+        "auth": "/api/auth",
+        "portfolio": "/api/portfolio",
+        "trades": "/api/trades", 
+        "pnl": "/api/pnl",
+        "binance_test": "/api/binance-test"
+    }
+    
+    # Advanced features endpoints
+    advanced_endpoints = {}
+    
+    if PORTFOLIO_SYNC_AVAILABLE:
+        advanced_endpoints["portfolio_sync"] = {
+            "sync": "/api/portfolio/sync",
+            "sync_status": "/api/portfolio/sync/status",
+            "enhanced_view": "/api/portfolio/enhanced"
+        }
+    
+    if TRADE_IMPORT_AVAILABLE:
+        advanced_endpoints["trade_import"] = {
+            "import": "/api/trades/import",
+            "analysis": "/api/trades/analysis", 
+            "import_status": "/api/trades/import/status"
+        }
+        
+    if REALTIME_PRICES_AVAILABLE:
+        advanced_endpoints["realtime_prices"] = {
+            "websocket_stream": "/api/prices/stream",
+            "current_prices": "/api/prices/current",
+            "stream_status": "/api/prices/stream/status",
+            "portfolio_watch": "/api/prices/portfolio-watch"
+        }
+        
+    if ADVANCED_PNL_AVAILABLE:
+        advanced_endpoints["advanced_pnl"] = {
+            "comprehensive": "/api/pnl/comprehensive",
+            "summary": "/api/pnl/summary", 
+            "performance": "/api/pnl/performance"
+        }
+    
     return {
         "app_name": settings.app_name,
         "version": settings.version,
         "debug_mode": settings.debug,
+        "status": "All systems operational",
+        "features": {
+            "core_api": bool(len(core_endpoints)),
+            "portfolio_sync": PORTFOLIO_SYNC_AVAILABLE,
+            "trade_import": TRADE_IMPORT_AVAILABLE,
+            "realtime_prices": REALTIME_PRICES_AVAILABLE,
+            "advanced_pnl": ADVANCED_PNL_AVAILABLE
+        },
         "endpoints": {
-            "health": "/health",
-            "docs": "/docs",
-            "redoc": "/redoc",
-            "portfolio": "/api/portfolio",
-            "trades": "/api/trades",
-            "pnl": "/api/pnl"
+            "core": core_endpoints,
+            "advanced": advanced_endpoints
         }
     }
 

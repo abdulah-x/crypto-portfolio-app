@@ -417,12 +417,12 @@ async def get_comprehensive_pnl(
         raise HTTPException(status_code=500, detail=f"P&L calculation failed: {str(e)}")
 
 @router.get("/pnl/summary", response_model=Dict[str, Any])
-async def get_pnl_summary(
+async def get_advanced_pnl_summary(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
-    Get quick P&L summary for dashboard
+    Get quick advanced P&L summary for dashboard
     """
     try:
         result = await pnl_calculator.calculate_comprehensive_pnl(current_user.id, db, days=30)

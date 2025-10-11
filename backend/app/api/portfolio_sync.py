@@ -269,7 +269,8 @@ async def sync_portfolio(
         return result
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Sync failed: {str(e)}")
+        logger.error(f"Portfolio sync failed: {str(e)}")
+        raise DatabaseError(f"Portfolio sync failed: {str(e)}")
 
 @router.get("/portfolio/sync/status", response_model=Dict[str, Any])
 async def get_sync_status(
@@ -367,4 +368,5 @@ async def get_enhanced_portfolio(
         }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get enhanced portfolio: {str(e)}")
+        logger.error(f"Failed to get enhanced portfolio: {str(e)}")
+        raise DatabaseError(f"Failed to get enhanced portfolio: {str(e)}")
