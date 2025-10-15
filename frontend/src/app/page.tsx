@@ -66,8 +66,87 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">
-      <div className="container mx-auto px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-800 text-white relative overflow-hidden">
+      {/* Enhanced Dynamic Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        {/* Gradient Mesh Overlays */}
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-transparent to-cyan-600/20"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-500/10 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/10 via-transparent to-pink-600/10"></div>
+        
+        {/* Animated 3D Geometric Shapes */}
+        <div className="absolute top-20 left-20 opacity-30">
+          <div className="w-32 h-32 bg-gradient-to-br from-purple-500/40 to-cyan-500/40 rounded-3xl rotate-45 animate-pulse backdrop-blur-sm border border-purple-400/30"></div>
+        </div>
+        <div className="absolute top-40 right-32 opacity-25">
+          <div className="w-24 h-24 bg-gradient-to-br from-cyan-500/40 to-blue-500/40 rounded-full animate-bounce border-2 border-cyan-400/30" style={{animationDelay: '1s'}}></div>
+        </div>
+        <div className="absolute bottom-40 left-32 opacity-30">
+          <div className="w-28 h-28 bg-gradient-to-br from-pink-500/40 to-purple-500/40 rounded-2xl animate-pulse border border-pink-400/30" style={{animationDelay: '2s'}}></div>
+        </div>
+        <div className="absolute bottom-20 right-20 opacity-25">
+          <div className="w-20 h-20 bg-gradient-to-br from-yellow-500/40 to-orange-500/40 rounded-full animate-bounce border border-yellow-400/30" style={{animationDelay: '3s'}}></div>
+        </div>
+        
+        {/* Floating Particles */}
+        <div className="absolute top-32 left-1/4 w-2 h-2 bg-purple-400/60 rounded-full animate-pulse"></div>
+        <div className="absolute top-64 right-1/3 w-1 h-1 bg-cyan-400/60 rounded-full animate-pulse" style={{animationDelay: '1.5s'}}></div>
+        <div className="absolute bottom-48 left-1/3 w-3 h-3 bg-pink-400/60 rounded-full animate-pulse" style={{animationDelay: '2.5s'}}></div>
+        <div className="absolute bottom-32 right-1/4 w-1 h-1 bg-blue-400/60 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+        
+        {/* Enhanced Grid Pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.05)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(34,197,94,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(34,197,94,0.03)_1px,transparent_1px)] bg-[size:100px_100px]" style={{transform: 'rotate(15deg) scale(1.2)'}}></div>
+        
+        {/* Floating 3D Cards */}
+        <div className="absolute top-1/4 right-1/4 opacity-20">
+          <div className="w-16 h-24 bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-xl border border-slate-600/50 backdrop-blur-sm transform rotate-12 hover:rotate-6 transition-transform duration-700">
+            <div className="p-2">
+              <div className="w-full h-2 bg-gradient-to-r from-purple-500 to-cyan-500 rounded mb-2"></div>
+              <div className="w-3/4 h-1 bg-slate-600 rounded mb-1"></div>
+              <div className="w-1/2 h-1 bg-slate-600 rounded"></div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="absolute bottom-1/3 left-1/5 opacity-20">
+          <div className="w-20 h-28 bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-xl border border-slate-600/50 backdrop-blur-sm transform -rotate-12 hover:rotate-0 transition-transform duration-700">
+            <div className="p-2">
+              <div className="w-full h-2 bg-gradient-to-r from-cyan-500 to-blue-500 rounded mb-2"></div>
+              <div className="w-4/5 h-1 bg-slate-600 rounded mb-1"></div>
+              <div className="w-2/3 h-1 bg-slate-600 rounded"></div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Animated Lines/Connections */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="lineGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="rgb(139, 92, 246)" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="rgb(6, 182, 212)" stopOpacity="0.1" />
+            </linearGradient>
+            <linearGradient id="lineGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="rgb(236, 72, 153)" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="rgb(139, 92, 246)" stopOpacity="0.1" />
+            </linearGradient>
+          </defs>
+          <path d="M100,200 Q300,100 500,300" stroke="url(#lineGradient1)" strokeWidth="2" fill="none" className="animate-pulse" />
+          <path d="M200,500 Q600,300 800,600" stroke="url(#lineGradient2)" strokeWidth="1.5" fill="none" className="animate-pulse" style={{animationDelay: '1s'}} />
+        </svg>
+        
+        {/* Glowing Orbs */}
+        <div className="absolute top-1/3 left-1/6">
+          <div className="w-32 h-32 bg-purple-500/20 rounded-full blur-xl animate-pulse"></div>
+          <div className="w-16 h-16 bg-purple-400/40 rounded-full absolute top-8 left-8 animate-ping"></div>
+        </div>
+        <div className="absolute bottom-1/4 right-1/5">
+          <div className="w-28 h-28 bg-cyan-500/20 rounded-full blur-xl animate-pulse" style={{animationDelay: '2s'}}></div>
+          <div className="w-12 h-12 bg-cyan-400/40 rounded-full absolute top-8 left-8 animate-ping" style={{animationDelay: '2s'}}></div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-12 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center min-h-screen">
           
           {/* Left Side - Enhanced Crypto Showcase */}
@@ -111,50 +190,59 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* Live Portfolio Preview */}
-            <div className="relative bg-slate-800/30 backdrop-blur-xl border border-slate-600/30 rounded-2xl p-6 hover:border-slate-500/40 transition-all duration-300 group">
+            {/* Live Portfolio Preview with 3D Effects */}
+            <div className="relative bg-gradient-to-br from-slate-800/40 via-slate-800/30 to-slate-900/50 backdrop-blur-xl border border-slate-600/40 rounded-2xl p-6 hover:border-slate-500/60 transition-all duration-500 group shadow-2xl shadow-purple-900/20 hover:shadow-purple-900/40 transform hover:-translate-y-1">
+              {/* Glowing border effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-cyan-600/20 to-purple-600/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10 blur-xl"></div>
+              
               <div className="flex items-center justify-between mb-6">
-                <h4 className="text-xl font-bold text-white">Live Portfolio</h4>
-                <div className="flex items-center gap-2">
+                <h4 className="text-xl font-bold text-white group-hover:text-purple-100 transition-colors">Live Portfolio</h4>
+                <div className="flex items-center gap-2 px-3 py-1 bg-green-500/20 rounded-full border border-green-400/30">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                   <span className="text-xs font-semibold text-green-400">LIVE</span>
                 </div>
               </div>
               
-              {/* Crypto Assets */}
+              {/* Enhanced 3D Crypto Assets */}
               <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="flex items-center gap-3 p-3 bg-slate-700/50 rounded-lg border border-slate-600/30 hover:border-yellow-500/30 transition-all group">
-                  <div className="p-2 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg">
-                    <Bitcoin className="h-5 w-5 text-white" />
+                <div className="relative flex items-center gap-3 p-4 bg-gradient-to-br from-slate-700/60 to-slate-800/40 rounded-xl border border-slate-600/40 hover:border-yellow-500/50 transition-all duration-300 group transform hover:-translate-y-1 shadow-lg hover:shadow-yellow-500/20">
+                  <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-orange-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative p-3 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl shadow-lg group-hover:shadow-yellow-500/50 transition-shadow">
+                    <Bitcoin className="h-6 w-6 text-white drop-shadow-lg" />
                   </div>
-                  <div>
-                    <div className="text-xs text-slate-400">BTC</div>
-                    <div className="text-lg font-bold text-white font-mono">$67,832</div>
-                    <div className="text-xs text-green-400">+2.5%</div>
+                  <div className="relative">
+                    <div className="text-xs text-slate-400 font-medium">BTC</div>
+                    <div className="text-lg font-black text-white font-mono tracking-tight">$67,832</div>
+                    <div className="text-xs text-green-400 font-semibold">↗ +2.5%</div>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3 p-3 bg-slate-700/50 rounded-lg border border-slate-600/30 hover:border-blue-500/30 transition-all group">
-                  <div className="p-2 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg">
-                    <Activity className="h-5 w-5 text-white" />
+                <div className="relative flex items-center gap-3 p-4 bg-gradient-to-br from-slate-700/60 to-slate-800/40 rounded-xl border border-slate-600/40 hover:border-blue-500/50 transition-all duration-300 group transform hover:-translate-y-1 shadow-lg hover:shadow-blue-500/20">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative p-3 bg-gradient-to-br from-blue-400 to-purple-500 rounded-xl shadow-lg group-hover:shadow-blue-500/50 transition-shadow">
+                    <Activity className="h-6 w-6 text-white drop-shadow-lg" />
                   </div>
-                  <div>
-                    <div className="text-xs text-slate-400">ETH</div>
-                    <div className="text-lg font-bold text-white font-mono">$3,421</div>
-                    <div className="text-xs text-green-400">+1.8%</div>
+                  <div className="relative">
+                    <div className="text-xs text-slate-400 font-medium">ETH</div>
+                    <div className="text-lg font-black text-white font-mono tracking-tight">$3,421</div>
+                    <div className="text-xs text-green-400 font-semibold">↗ +1.8%</div>
                   </div>
                 </div>
               </div>
               
-              {/* Portfolio Value */}
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-600/20 to-cyan-600/20 rounded-lg border border-purple-500/30">
-                <div>
-                  <div className="text-sm text-slate-300">Total Portfolio Value</div>
-                  <div className="text-2xl font-black text-white font-mono">$247,832.09</div>
+              {/* Enhanced Portfolio Value with 3D Effect */}
+              <div className="relative flex items-center justify-between p-6 bg-gradient-to-br from-purple-600/30 via-purple-700/20 to-cyan-600/30 rounded-xl border border-purple-500/40 hover:border-purple-400/60 transition-all duration-300 group shadow-2xl hover:shadow-purple-900/50 transform hover:-translate-y-1">
+                {/* Animated background glow */}
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-cyan-600/10 rounded-xl animate-pulse"></div>
+                <div className="relative">
+                  <div className="text-sm text-slate-300 font-medium mb-1">Total Portfolio Value</div>
+                  <div className="text-3xl font-black font-mono tracking-tight bg-gradient-to-r from-white via-purple-100 to-cyan-100 bg-clip-text text-transparent">
+                    $247,832.09
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1 bg-green-500/20 rounded-full border border-green-400/30">
-                  <TrendingUp className="h-4 w-4 text-green-400" />
-                  <span className="text-sm font-bold text-green-400">+12.5%</span>
+                <div className="relative flex items-center gap-3 px-4 py-2 bg-green-500/30 hover:bg-green-500/40 rounded-full border border-green-400/40 hover:border-green-300/60 transition-all duration-300 shadow-lg shadow-green-900/30">
+                  <TrendingUp className="h-5 w-5 text-green-400 animate-bounce" />
+                  <span className="text-lg font-bold text-green-400">+12.5%</span>
                 </div>
               </div>
 
@@ -187,9 +275,11 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Right Side - Authentication Form */}
+          {/* Right Side - Enhanced Authentication Form */}
           <div className="max-w-md mx-auto w-full">
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50">
+            <div className="relative bg-gradient-to-br from-slate-800/60 via-slate-800/40 to-slate-900/60 backdrop-blur-xl rounded-2xl p-8 border border-slate-700/60 shadow-2xl shadow-purple-900/20 hover:shadow-purple-900/30 transition-all duration-500 transform hover:-translate-y-1">
+              {/* Glowing border effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-cyan-600/10 to-purple-600/10 rounded-2xl opacity-50 blur-xl -z-10"></div>
               {/* Form Toggle */}
               <div className="flex items-center justify-center mb-6">
                 <div className="bg-slate-700/50 rounded-xl p-1 flex">
@@ -242,7 +332,7 @@ export default function HomePage() {
                 <button 
                   onClick={() => loginWithGoogle()}
                   disabled={isLoading}
-                  className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white hover:bg-gray-50 rounded-xl transition-colors border text-gray-700 hover:text-gray-900 disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white hover:bg-gray-50 rounded-xl transition-all duration-300 border border-gray-200 hover:border-gray-300 text-gray-700 hover:text-gray-900 disabled:opacity-50 transform hover:-translate-y-1 shadow-lg hover:shadow-xl"
                 >
                   <svg className="h-5 w-5" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -256,7 +346,7 @@ export default function HomePage() {
                 <button 
                   onClick={() => loginWithApple()}
                   disabled={isLoading}
-                  className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-black hover:bg-gray-900 rounded-xl transition-colors border border-gray-800 text-white disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-black hover:bg-gray-900 rounded-xl transition-all duration-300 border border-gray-800 hover:border-gray-700 text-white disabled:opacity-50 transform hover:-translate-y-1 shadow-lg hover:shadow-xl"
                 >
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
@@ -267,7 +357,7 @@ export default function HomePage() {
                 <button 
                   onClick={() => loginWithGitHub()}
                   disabled={isLoading}
-                  className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl transition-colors border border-slate-600 text-white disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl transition-all duration-300 border border-slate-600 hover:border-slate-500 text-white disabled:opacity-50 transform hover:-translate-y-1 shadow-lg hover:shadow-xl"
                 >
                   <Github className="h-5 w-5" />
                   {isLogin ? 'Sign in with GitHub' : 'Continue with GitHub'}
@@ -404,7 +494,7 @@ export default function HomePage() {
                 <button 
                   type="submit"
                   disabled={isLoading || (!isLogin && !formData.agreedToTerms)}
-                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-500 rounded-lg font-semibold text-white hover:from-purple-500 hover:to-cyan-400 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 via-purple-500 to-cyan-500 hover:from-purple-500 hover:via-pink-500 hover:to-cyan-400 rounded-xl font-bold text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transform hover:-translate-y-1 shadow-2xl shadow-purple-900/50 hover:shadow-purple-900/70 border border-purple-500/50 hover:border-purple-400/70"
                 >
                   {isLoading ? (isLogin ? 'Signing In...' : 'Creating Account...') : (isLogin ? 'Sign In' : 'Create Account')}
                   <ArrowRight className="h-4 w-4" />
