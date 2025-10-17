@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Shield, ArrowRight, Github, TrendingUp, Bitcoin, BarChart3, Wallet, Activity, PieChart, DollarSign, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
 
 export default function HomePage() {
-  const { loginWithGoogle, loginWithApple, loginWithGitHub, login, signup, isLoading, error } = useAuth();
+  const { loginWithGoogle, loginWithApple, loginWithGitHub, login, signup, isLoading, error, isAuthenticated } = useAuth();
+  const router = useRouter();
   const [isLogin, setIsLogin] = useState(true); // Start with login view
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ 
@@ -18,7 +20,12 @@ export default function HomePage() {
     agreedToTerms: false 
   });
 
-  // Form handlers
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Form submitted with:', formData);
