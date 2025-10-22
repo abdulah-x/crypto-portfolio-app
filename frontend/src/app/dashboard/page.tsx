@@ -24,7 +24,15 @@ import {
   Loader2,
   ChevronDown,
   X,
-  Wallet
+  Wallet,
+  BarChart3,
+  DollarSign,
+  Target,
+  Gift,
+  Shield,
+  Headphones,
+  Coins,
+  BookOpen
 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { usePortfolioSummary, useHoldings, useMarketData } from "@/lib/react-query";
@@ -111,6 +119,7 @@ export default function DashboardPage() {
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeMenuItem, setActiveMenuItem] = useState("Portfolio");
 
   // Fetch real data with React Query
   const { data: portfolioSummary, isLoading: portfolioLoading, error: portfolioError } = usePortfolioSummary();
@@ -212,88 +221,187 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Left Sidebar */}
-      <div className="w-64 bg-[#1A1A1A] border-r border-gray-800 flex flex-col relative z-10">
-        {/* User Profile */}
-        <div className="p-6 border-b border-gray-800">
-          <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-800/50 rounded-lg p-2 -m-2 transition-colors">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
-              <User className="w-6 h-6" />
+      {/* Left Sidebar - Modern Design */}
+      <div className="w-72 bg-[#1A1A1A]/95 backdrop-blur-xl border-r border-gray-800/50 flex flex-col relative z-10">
+        {/* User Profile - Enhanced */}
+        <div className="p-6 border-b border-gray-800/50">
+          <div className="flex items-center gap-4 cursor-pointer hover:bg-white/5 rounded-xl p-3 -m-3 transition-all duration-300 group">
+            <div className="relative">
+              <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-xl ring-2 ring-white/10 group-hover:ring-white/20 transition-all">
+                <User className="w-7 h-7 text-white" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-[#1A1A1A]"></div>
             </div>
             <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-base text-white">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-heading font-bold text-lg text-white">
                   {user?.firstName || "Demo"}
                 </span>
-                <span className="px-2 py-0.5 bg-blue-500 text-xs font-bold rounded-full">PRO</span>
-                <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />
+                <span className="px-2 py-1 bg-gradient-to-r from-blue-500 to-purple-500 text-xs font-bold rounded-lg text-white shadow-lg">PRO</span>
               </div>
-              <p className="text-sm text-gray-300 font-medium">Premium User</p>
+              <p className="text-sm text-gray-400 font-medium">@{user?.firstName?.toLowerCase() || "demo"}_user</p>
             </div>
+            <ChevronDown className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" />
           </div>
         </div>
 
-        {/* Navigation Menu */}
-        <div className="flex-1 p-4">
+        {/* Navigation Menu - Modern Structure */}
+        <div className="flex-1 p-6 space-y-8">
           {/* MENU Section */}
-          <div className="mb-8">
-            <h3 className="text-xs font-black text-gray-400 mb-4 uppercase tracking-wider">MENU</h3>
+          <div>
+            <div className="flex items-center gap-2 mb-6">
+              <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                <BarChart3 className="w-3 h-3 text-white" />
+              </div>
+              <h3 className="text-sm font-heading font-bold text-white uppercase tracking-wider">MENU</h3>
+            </div>
             <nav className="space-y-2">
-              <a href="#" className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 rounded-lg transition-colors">
-                <Home className="w-4 h-4" />
-                <span className="text-sm font-semibold">Dashboard</span>
-              </a>
-              <a href="#" className="flex items-center gap-3 px-3 py-2 bg-blue-500/20 text-blue-400 rounded-lg">
-                <PieChart className="w-4 h-4" />
-                <span className="text-sm font-bold">Portfolio</span>
-              </a>
-              <a href="#" className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 rounded-lg transition-colors">
-                <TrendingUp className="w-4 h-4" />
-                <span className="text-sm font-semibold">Market</span>
-              </a>
-              <a href="#" className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 rounded-lg transition-colors">
-                <Layers className="w-4 h-4" />
-                <span className="text-sm font-semibold">Staking</span>
-              </a>
+              <button 
+                onClick={() => setActiveMenuItem("Dashboard")}
+                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group ${
+                  activeMenuItem === "Dashboard" 
+                    ? "bg-white/10 backdrop-blur-sm text-white shadow-lg border border-white/20" 
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Home className="w-5 h-5" />
+                <span className="text-base font-heading font-bold">Dashboard</span>
+              </button>
+              
+              <button 
+                onClick={() => setActiveMenuItem("Portfolio")}
+                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group ${
+                  activeMenuItem === "Portfolio" 
+                    ? "bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm text-white shadow-lg border border-blue-500/30" 
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <PieChart className="w-5 h-5" />
+                <span className="text-base font-heading font-bold">Portfolio</span>
+              </button>
+              
+              <button 
+                onClick={() => setActiveMenuItem("Market")}
+                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group ${
+                  activeMenuItem === "Market" 
+                    ? "bg-white/10 backdrop-blur-sm text-white shadow-lg border border-white/20" 
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <TrendingUp className="w-5 h-5" />
+                <span className="text-base font-heading font-bold">Market</span>
+              </button>
+              
+              <button 
+                onClick={() => setActiveMenuItem("Staking")}
+                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group relative ${
+                  activeMenuItem === "Staking" 
+                    ? "bg-white/10 backdrop-blur-sm text-white shadow-lg border border-white/20" 
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Coins className="w-5 h-5" />
+                <span className="text-base font-heading font-bold">Staking</span>
+                <div className="ml-auto w-6 h-6 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                  <span className="text-xs font-bold text-white">6%</span>
+                </div>
+              </button>
             </nav>
           </div>
 
-          {/* GENERAL Section */}
-          <div className="mb-8">
+          {/* MONITORING Section */}
+          <div>
+            <div className="flex items-center gap-2 mb-6">
+              <div className="w-6 h-6 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center">
+                <Eye className="w-3 h-3 text-white" />
+              </div>
+              <h3 className="text-sm font-heading font-bold text-white uppercase tracking-wider">MONITORING</h3>
+            </div>
             <nav className="space-y-2">
-              <a href="#" className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 rounded-lg transition-colors">
-                <Settings className="w-4 h-4" />
-                <span className="text-sm font-semibold">Settings</span>
-              </a>
-              <a href="#" className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 rounded-lg transition-colors">
-                <Palette className="w-4 h-4" />
-                <span className="text-sm font-semibold">Appearance</span>
-              </a>
-              <a href="#" className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 rounded-lg transition-colors">
-                <HelpCircle className="w-4 h-4" />
-                <span className="text-sm font-semibold">Support</span>
-              </a>
               <button 
-                onClick={logout}
-                className="flex items-center gap-3 px-3 py-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors w-full text-left"
+                onClick={() => setActiveMenuItem("All Files")}
+                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group ${
+                  activeMenuItem === "All Files" 
+                    ? "bg-white/10 backdrop-blur-sm text-white shadow-lg border border-white/20" 
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                }`}
               >
-                <LogOut className="w-4 h-4" />
-                <span className="text-sm font-semibold">Logout</span>
+                <FileText className="w-5 h-5" />
+                <span className="text-base font-heading font-bold">All Files</span>
+              </button>
+              
+              <button 
+                onClick={() => setActiveMenuItem("Rewards")}
+                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group ${
+                  activeMenuItem === "Rewards" 
+                    ? "bg-white/10 backdrop-blur-sm text-white shadow-lg border border-white/20" 
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Gift className="w-5 h-5" />
+                <span className="text-base font-heading font-bold">Rewards</span>
+              </button>
+              
+              <button 
+                onClick={() => setActiveMenuItem("Documentation")}
+                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group ${
+                  activeMenuItem === "Documentation" 
+                    ? "bg-white/10 backdrop-blur-sm text-white shadow-lg border border-white/20" 
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <BookOpen className="w-5 h-5" />
+                <span className="text-base font-heading font-bold">Documentation</span>
               </button>
             </nav>
           </div>
         </div>
 
-        {/* AI Friend Card */}
-        <div className="p-4">
-          <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 border border-purple-500/30 rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Bot className="w-5 h-5 text-purple-400" />
-              <span className="px-2 py-0.5 bg-purple-500 text-xs font-bold rounded-full">PRO</span>
-            </div>
-            <p className="text-sm font-bold mb-1 text-white">Your AI Friend</p>
-            <p className="text-xs text-gray-400 font-medium">in Trade</p>
-          </div>
+        {/* Bottom Section - Settings & Support */}
+        <div className="p-6 border-t border-gray-800/50 space-y-2">
+          <button 
+            onClick={() => setActiveMenuItem("Settings")}
+            className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group ${
+              activeMenuItem === "Settings" 
+                ? "bg-white/10 backdrop-blur-sm text-white shadow-lg border border-white/20" 
+                : "text-gray-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <Settings className="w-5 h-5" />
+            <span className="text-base font-heading font-bold">Settings</span>
+          </button>
+          
+          <button 
+            onClick={() => setActiveMenuItem("Appearance")}
+            className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group ${
+              activeMenuItem === "Appearance" 
+                ? "bg-white/10 backdrop-blur-sm text-white shadow-lg border border-white/20" 
+                : "text-gray-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <Palette className="w-5 h-5" />
+            <span className="text-base font-heading font-bold">Appearance</span>
+          </button>
+          
+          <button 
+            onClick={() => setActiveMenuItem("Support")}
+            className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group ${
+              activeMenuItem === "Support" 
+                ? "bg-white/10 backdrop-blur-sm text-white shadow-lg border border-white/20" 
+                : "text-gray-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <Headphones className="w-5 h-5" />
+            <span className="text-base font-heading font-bold">Support</span>
+          </button>
+          
+          <button 
+            onClick={logout}
+            className="w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-transparent hover:border-red-500/30"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="text-base font-heading font-bold">Logout</span>
+          </button>
         </div>
       </div>
 
@@ -301,11 +409,11 @@ export default function DashboardPage() {
       <div className="flex-1 flex flex-col overflow-hidden relative z-10">
         {/* Header */}
         <div className={`bg-[#1A1A1A] border-b border-gray-800 p-6 ${
-          (portfolioError || holdingsLoading === false && (!holdings || holdings.length === 0)) ? 'mt-10' : ''
+          (portfolioError || !holdingsLoading && !holdings?.length) ? 'mt-10' : ''
         }`}>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-black mb-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Trading Portfolio</h1>
+              <h1 className="text-3xl font-heading font-black mb-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Trading Portfolio</h1>
               <p className="text-gray-400 font-medium">Welcome to Portfolio !</p>
             </div>
             <div className="flex items-center gap-4">
@@ -367,7 +475,7 @@ export default function DashboardPage() {
                     <Settings className="w-6 h-6 text-blue-400" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-lg text-white mb-1">Customise your Portfolio</h3>
+                    <h3 className="font-heading font-bold text-lg text-white mb-1">Customise your Portfolio</h3>
                     <p className="text-sm text-gray-400 font-medium">Create your own portfolio with range of tools, expenses, and accomplishments.</p>
                   </div>
                   <button className="px-6 py-2 bg-white text-black rounded-lg font-bold hover:bg-gray-100 transition-colors">
@@ -381,7 +489,7 @@ export default function DashboardPage() {
                 {/* Portfolio Holdings Header */}
                 <div className="p-6 border-b border-gray-800">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-black text-white">My Holdings</h2>
+                    <h2 className="text-2xl font-heading font-black text-white">My Holdings</h2>
                     <div className="flex items-center gap-2">
                       <button className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
                         <MoreHorizontal className="w-5 h-5 text-gray-400" />
@@ -525,7 +633,7 @@ export default function DashboardPage() {
               <div className="bg-[#1A1A1A] border border-gray-800 rounded-xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="font-bold text-white">
+                    <h3 className="font-heading font-bold text-white">
                       {selectedAsset ? `${selectedAsset.name}/USDT` : 'ETH/USDT'}
                     </h3>
                     <p className="text-xs text-gray-400 font-medium">Last 7 Days (UTC+1)</p>
@@ -568,7 +676,7 @@ export default function DashboardPage() {
 
               {/* Portfolio Breakdown or Asset Details */}
               <div className="bg-[#1A1A1A] border border-gray-800 rounded-xl p-6">
-                <h3 className="font-bold text-white mb-4">
+                <h3 className="font-heading font-bold text-white mb-4">
                   {selectedAsset ? `${selectedAsset.name} Details` : 'Portfolio Breakdown'}
                 </h3>
                 
@@ -650,7 +758,7 @@ export default function DashboardPage() {
                       {selectedAsset ? selectedAsset.symbol.charAt(0) : 'M'}
                     </div>
                     <div>
-                      <h3 className="font-bold text-white">
+                      <h3 className="font-heading font-bold text-white">
                         {selectedAsset ? selectedAsset.name : 'Monero Xmr'}
                       </h3>
                       <p className="text-xs text-gray-400 font-medium">Cryptocurrency</p>

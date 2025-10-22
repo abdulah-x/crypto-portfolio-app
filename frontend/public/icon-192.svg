@@ -1,0 +1,28 @@
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- VaultX gradient -->
+    <linearGradient id="icon-192-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#A855F7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06B6D4;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Background -->
+    <radialGradient id="icon-192-bg" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" style="stop-color:#1E293B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0F172A;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="192" height="192" rx="24" fill="url(#icon-192-bg)" />
+  
+  <!-- Shield -->
+  <path d="M96 40L64 52V96C64 140 80 172 96 184C112 172 128 140 128 96V52L96 40Z" fill="url(#icon-192-gradient)" />
+  
+  <!-- Inner highlight -->
+  <path d="M96 52L76 60V96C76 128 88 148 96 156C104 148 116 128 116 96V60L96 52Z" fill="white" fill-opacity="0.15" />
+  
+  <!-- VaultX "V" -->
+  <path d="M84 76L96 116L108 76" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+</svg>

@@ -1,0 +1,41 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- VaultX gradient -->
+    <linearGradient id="apple-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#A855F7;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#EC4899;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06B6D4;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Background gradient -->
+    <radialGradient id="apple-bg" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" style="stop-color:#1E293B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0F172A;stop-opacity:1" />
+    </radialGradient>
+    
+    <!-- Glow effect -->
+    <radialGradient id="glow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background with rounded corners for iOS -->
+  <rect width="180" height="180" rx="40" fill="url(#apple-bg)" />
+  
+  <!-- Glow effect -->
+  <circle cx="90" cy="90" r="80" fill="url(#glow)" />
+  
+  <!-- Main shield -->
+  <path d="M90 35L60 45V90C60 130 75 160 90 170C105 160 120 130 120 90V45L90 35Z" fill="url(#apple-gradient)" />
+  
+  <!-- Inner shield highlight -->
+  <path d="M90 45L70 52V90C70 120 80 140 90 147C100 140 110 120 110 90V52L90 45Z" fill="white" fill-opacity="0.15" />
+  
+  <!-- VaultX "V" symbol -->
+  <path d="M78 70L90 110L102 70" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  
+  <!-- Secondary "V" for depth -->
+  <path d="M81 75L90 100L99 75" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.6" />
+</svg>
