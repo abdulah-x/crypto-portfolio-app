@@ -521,7 +521,7 @@ export default function HomePage() {
                 <span className="text-slate-400 text-sm">
                   {isLogin ? (
                     <>
-                      Don't have an account?{" "}
+                      Don&apos;t have an account?{" "}
                       <button 
                         onClick={() => setIsLogin(false)}
                         className="text-purple-400 hover:text-purple-300 font-semibold transition-colors"
