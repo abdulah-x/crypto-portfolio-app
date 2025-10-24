@@ -29,6 +29,35 @@ export default function PortfolioOverview({
   dayChange, 
   weekChange 
 }: PortfolioOverviewProps) {
+  // Custom label rendering function for pie slices
+  const renderCustomLabel = (entry: any) => {
+    const { cx, cy, midAngle, innerRadius, outerRadius, percent, asset } = entry;
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 1.2;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    // Only show labels for slices > 5% to avoid clutter
+    if (percent < 0.05) return null;
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="#ffffff" 
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central"
+        className="text-sm font-bold"
+        style={{ 
+          fontSize: '12px',
+          textShadow: '1px 1px 2px rgba(0,0,0,0.8)'
+        }}
+      >
+        {`${asset}`}
+      </text>
+    );
+  };
+
   return (
     <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
       <div className="flex items-center justify-between mb-6">
@@ -43,20 +72,22 @@ export default function PortfolioOverview({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Portfolio Donut Chart */}
         <div className="flex flex-col items-center">
-          <div className="relative w-64 h-64">
+          <div className="relative w-80 h-80">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={allocationData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={70}
-                  outerRadius={120}
+                  labelLine={false}
+                  label={renderCustomLabel}
+                  outerRadius={140}
+                  innerRadius={85}
                   startAngle={90}
                   endAngle={450}
-                  paddingAngle={1}
+                  paddingAngle={2}
                   dataKey="value"
-                  stroke="#1f2937"
+                  stroke="#1e293b"
                   strokeWidth={2}
                 >
                   {allocationData.map((entry, index) => (
@@ -66,10 +97,12 @@ export default function PortfolioOverview({
               </PieChart>
             </ResponsiveContainer>
             
-            {/* Center Label */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <div className="text-sm font-medium text-gray-400 mb-1">Total Balance</div>
-              <div className="text-xl font-bold text-white">{totalBalance}</div>
+            {/* Perfectly Centered Label */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="text-center">
+                <div className="text-xs font-medium text-gray-400 mb-1 uppercase tracking-wider">Total Balance</div>
+                <div className="text-3xl font-bold text-white tracking-tight">{totalBalance}</div>
+              </div>
             </div>
           </div>
           
@@ -96,25 +129,28 @@ export default function PortfolioOverview({
           </div>
         </div>
 
-        {/* Allocation Details */}
+        {/* Detailed Asset Summary */}
         <div className="space-y-4">
           <div className="mb-6">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">Asset Breakdown</h4>
+            <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">Detailed Summary</h4>
             
-            {/* Asset List */}
+            {/* Enhanced Asset List with more details */}
             <div className="space-y-3">
               {allocationData.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition-colors">
+                <div key={index} className="flex items-center justify-between p-4 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition-colors border border-gray-700/50">
                   <div className="flex items-center gap-3">
                     <div 
-                      className="w-4 h-4 rounded-full border-2 border-gray-700"
+                      className="w-5 h-5 rounded-full border-2 border-gray-600 shadow-sm"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="text-sm font-bold text-white">{item.asset}</span>
+                    <div>
+                      <span className="text-sm font-bold text-white block">{item.asset}</span>
+                      <span className="text-xs text-gray-400">Allocation</span>
+                    </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-bold text-white">{item.percentage}%</div>
-                    <div className="text-xs text-gray-400 font-medium">${item.value.toLocaleString()}</div>
+                    <div className="text-lg font-bold text-white">{item.percentage}%</div>
+                    <div className="text-sm text-gray-300 font-medium">${item.value.toLocaleString()}</div>
                   </div>
                 </div>
               ))}
