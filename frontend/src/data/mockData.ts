@@ -20,12 +20,12 @@ export const mockPortfolioMetrics = {
 };
 
 export const mockAllocationData = [
-  { asset: "BTC", value: 740000, percentage: 40.0, color: "#f7931a" },
-  { asset: "ETH", value: 555000, percentage: 30.0, color: "#627eea" },
-  { asset: "SOL", value: 185000, percentage: 10.0, color: "#00d4aa" },
-  { asset: "ADA", value: 148000, percentage: 8.0, color: "#0033ad" },
-  { asset: "DOT", value: 111000, percentage: 6.0, color: "#e6007a" },
-  { asset: "Others", value: 111000, percentage: 6.0, color: "#8b5cf6" }
+  { asset: "BTC", value: 19800.26, percentage: 40.0, color: "#f7931a" },
+  { asset: "ETH", value: 14850.20, percentage: 30.0, color: "#627eea" },
+  { asset: "SOL", value: 4950.07, percentage: 10.0, color: "#00d4aa" },
+  { asset: "ADA", value: 3960.05, percentage: 8.0, color: "#0033ad" },
+  { asset: "DOT", value: 2970.04, percentage: 6.0, color: "#e6007a" },
+  { asset: "Others", value: 2970.04, percentage: 6.0, color: "#8b5cf6" }
 ];
 
 export const mockHoldingsData = [
