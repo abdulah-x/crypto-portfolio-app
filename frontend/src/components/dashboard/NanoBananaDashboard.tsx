@@ -210,42 +210,36 @@ export default function NanoBananaDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <MetricCard
               title="Total Capital"
-              value={mockPortfolioMetrics.totalCapital}
-              change={mockPortfolioMetrics.portfolioChange}
+              value={mockPortfolioMetrics.totalCapital.value}
+              change={mockPortfolioMetrics.totalCapital.change24h}
               sparklineData={sparklineData}
               icon={<DollarSign className="w-5 h-5 text-cyan-500" />}
             />
             <MetricCard
-              title="Portfolio Value Change"
-              value={mockPortfolioMetrics.portfolioChange.value}
-              change={{
-                value: mockPortfolioMetrics.portfolioChange.value,
-                percentage: mockPortfolioMetrics.portfolioChange.percentage,
-                isPositive: mockPortfolioMetrics.portfolioChange.isPositive
-              }}
-              subtitle="24h Change"
-              icon={<TrendingUp className="w-5 h-5 text-emerald-500" />}
-            />
-            <MetricCard
               title="Unrealized P&L"
               value={mockPortfolioMetrics.unrealizedPnL.value}
-              change={{
-                value: mockPortfolioMetrics.unrealizedPnL.value,
-                percentage: mockPortfolioMetrics.unrealizedPnL.percentage,
-                isPositive: mockPortfolioMetrics.unrealizedPnL.isPositive
-              }}
+              change={mockPortfolioMetrics.unrealizedPnL.change24h}
               subtitle="Open Positions"
-              icon={<Target className="w-5 h-5 text-amber-500" />}
+              sparklineData={sparklineData.map(val => val * 0.8)} // Different trend
+              icon={<TrendingUp className="w-5 h-5 text-amber-500" />}
             />
             <MetricCard
-              title="Total Rate"
-              value={mockPortfolioMetrics.totalRate.value}
+              title="Realized P&L"
+              value={mockPortfolioMetrics.realizedPnL.value}
+              change={mockPortfolioMetrics.realizedPnL.change24h}
+              subtitle="Closed Positions"
+              sparklineData={sparklineData.map(val => val * 1.2)} // Different trend
+              icon={<Target className="w-5 h-5 text-emerald-500" />}
+            />
+            <MetricCard
+              title="Success Rate"
+              value={mockPortfolioMetrics.successRate.percentage}
               change={{
-                value: mockPortfolioMetrics.totalRate.value,
-                percentage: mockPortfolioMetrics.totalRate.percentage,
-                isPositive: mockPortfolioMetrics.totalRate.isPositive
+                value: `${mockPortfolioMetrics.successRate.winningTrades}/${mockPortfolioMetrics.successRate.totalTrades} trades`,
+                percentage: `$${parseInt(mockPortfolioMetrics.successRate.profitFromWins).toLocaleString()} profit`,
+                isPositive: true
               }}
-              subtitle="Success Rate"
+              subtitle="Winning Trades"
               icon={<PieChartIcon className="w-5 h-5 text-blue-500" />}
             />
           </div>

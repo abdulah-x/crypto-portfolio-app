@@ -1,21 +1,43 @@
 // Mock data for the Nano Banana inspired dashboard
 
 export const mockPortfolioMetrics = {
-  totalCapital: "$1,850,000",
-  portfolioChange: {
-    value: "$45,000",
-    percentage: "+12%",
-    isPositive: true
+  totalCapital: {
+    value: "$1,850,000",
+    change24h: {
+      value: "$45,000",
+      percentage: "+2.5%",
+      isPositive: true
+    }
   },
   unrealizedPnL: {
-    value: "$13,200",
-    percentage: "-0.5%",
-    isPositive: false
+    value: "$158,200",
+    change24h: {
+      value: "-$8,200",
+      percentage: "-4.9%",
+      isPositive: false
+    }
   },
-  totalRate: {
-    value: "$41,800",
-    percentage: "78%",
-    isPositive: true
+  realizedPnL: {
+    value: "$324,500",
+    change24h: {
+      value: "$12,300",
+      percentage: "+3.9%",
+      isPositive: true
+    }
+  },
+  successRate: {
+    percentage: "78.5%",
+    profitFromWins: "298400",
+    totalTrades: 247,
+    winningTrades: 194
+  },
+  totalFees: {
+    value: "$8,420",
+    change24h: {
+      value: "$145",
+      percentage: "+1.7%",
+      isPositive: false // Higher fees are negative
+    }
   }
 };
 
