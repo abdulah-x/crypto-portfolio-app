@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { 
   DollarSign, 
   TrendingUp, 
@@ -11,10 +12,10 @@ import {
   Search,
   Bell,
   Settings,
-  User,
   Menu,
   X
 } from "lucide-react";
+import { useAuth } from "@/providers/AuthProvider";
 
 import MetricCard from "@/components/ui/MetricCard";
 import PortfolioOverview from "@/components/dashboard/PortfolioOverview";
@@ -32,8 +33,43 @@ import {
 export default function NanoBananaDashboard() {
   const [selectedTimeframe, setSelectedTimeframe] = useState("30D");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, isLoading } = useAuth();
 
   const totalPortfolioValue = mockHoldingsData.reduce((sum, holding) => sum + holding.marketValue, 0);
+
+  // Get user display info with fallbacks
+  const getDisplayName = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user?.firstName) return user.firstName;
+    if (user?.email) return user.email.split('@')[0];
+    return 'Portfolio Owner';
+  };
+
+  const getInitials = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    }
+    if (user?.firstName) return user.firstName.substring(0, 2).toUpperCase();
+    if (user?.email) return user.email.substring(0, 2).toUpperCase();
+    return 'PO';
+  };
+
+  // Show loading state while auth is initializing
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center mb-4 mx-auto animate-pulse">
+            <span className="text-white font-bold text-xl">PO</span>
+          </div>
+          <div className="text-white text-lg font-medium">Loading Portfolio...</div>
+          <div className="text-gray-400 text-sm mt-2">Please wait while we prepare your dashboard</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
@@ -47,33 +83,30 @@ export default function NanoBananaDashboard() {
       <header className="relative z-10 bg-gray-900/80 backdrop-blur-xl border-b border-gray-800">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
-            {/* Logo and Navigation */}
-            <div className="flex items-center gap-6">
+            {/* User Profile Section */}
+            <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">NB</span>
+                {/* User Avatar */}
+                <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                  {user?.avatar ? (
+                    <Image 
+                      src={user.avatar} 
+                      alt="Profile" 
+                      width={48}
+                      height={48}
+                      className="w-12 h-12 rounded-xl object-cover"
+                    />
+                  ) : (
+                    <span className="text-white font-bold text-lg">{getInitials()}</span>
+                  )}
                 </div>
-                <div>
-                  <h1 className="text-xl font-bold text-white">NANO BANANA</h1>
+                
+                {/* User Info */}
+                <div className="hidden sm:block">
+                  <h1 className="text-xl font-bold text-white">{getDisplayName()}</h1>
                   <p className="text-xs text-gray-400">Portfolio Dashboard</p>
                 </div>
               </div>
-
-              {/* Desktop Navigation */}
-              <nav className="hidden lg:flex items-center gap-1 ml-8">
-                {["Dashboard", "Portfolio", "Markets", "Orders", "Analytics"].map((item) => (
-                  <button
-                    key={item}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      item === "Dashboard"
-                        ? "bg-cyan-600 text-white"
-                        : "text-gray-400 hover:text-white hover:bg-gray-800"
-                    }`}
-                  >
-                    {item}
-                  </button>
-                ))}
-              </nav>
             </div>
 
             {/* Right Side */}
@@ -98,12 +131,22 @@ export default function NanoBananaDashboard() {
                 <Settings className="w-5 h-5" />
               </button>
 
-              {/* Profile */}
-              <div className="flex items-center gap-3 bg-gray-800 rounded-lg px-3 py-2">
+              {/* User Menu */}
+              <div className="flex items-center gap-3 bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 hover:bg-gray-800 transition-colors">
                 <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
+                  {user?.avatar ? (
+                    <Image 
+                      src={user.avatar} 
+                      alt="Profile" 
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <span className="text-white font-bold text-xs">{getInitials()}</span>
+                  )}
                 </div>
-                <span className="text-white font-medium text-sm hidden md:block">John Doe</span>
+                <span className="text-white font-medium text-sm hidden md:block">{getDisplayName()}</span>
               </div>
 
               {/* Mobile Menu */}
