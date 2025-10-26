@@ -33,6 +33,7 @@ import {
 export default function NanoBananaDashboard() {
   const [selectedTimeframe, setSelectedTimeframe] = useState("30D");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const { user, isLoading } = useAuth();
 
   const totalPortfolioValue = mockHoldingsData.reduce((sum, holding) => sum + holding.marketValue, 0);
@@ -88,13 +89,14 @@ export default function NanoBananaDashboard() {
               <div className="flex items-center gap-3">
                 {/* User Avatar */}
                 <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                  {user?.avatar ? (
+                  {user?.avatar && !imageError ? (
                     <Image 
                       src={user.avatar} 
                       alt="Profile" 
                       width={48}
                       height={48}
                       className="w-12 h-12 rounded-xl object-cover"
+                      onError={() => setImageError(true)}
                     />
                   ) : (
                     <span className="text-white font-bold text-lg">{getInitials()}</span>
@@ -134,13 +136,14 @@ export default function NanoBananaDashboard() {
               {/* User Menu */}
               <div className="flex items-center gap-3 bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 hover:bg-gray-800 transition-colors">
                 <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
-                  {user?.avatar ? (
+                  {user?.avatar && !imageError ? (
                     <Image 
                       src={user.avatar} 
                       alt="Profile" 
                       width={32}
                       height={32}
                       className="w-8 h-8 rounded-lg object-cover"
+                      onError={() => setImageError(true)}
                     />
                   ) : (
                     <span className="text-white font-bold text-xs">{getInitials()}</span>
