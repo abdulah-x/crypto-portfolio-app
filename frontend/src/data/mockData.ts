@@ -1,45 +1,68 @@
-// Mock data for the Nano Banana inspired dashboard
+// Mock data for the crypto portfolio dashboard
 
-export const mockPortfolioMetrics = {
-  totalCapital: {
-    value: "$1,850,000",
-    change24h: {
-      value: "$45,000",
-      percentage: "+2.5%",
-      isPositive: true
-    }
-  },
-  unrealizedPnL: {
-    value: "$158,200",
-    change24h: {
-      value: "-$8,200",
-      percentage: "-4.9%",
-      isPositive: false
-    }
-  },
-  realizedPnL: {
-    value: "$324,500",
-    change24h: {
-      value: "$12,300",
-      percentage: "+3.9%",
-      isPositive: true
-    }
-  },
-  successRate: {
-    percentage: "78.5%",
-    profitFromWins: "298400",
-    totalTrades: 247,
-    winningTrades: 194
-  },
-  totalFees: {
-    value: "$8,420",
-    change24h: {
-      value: "$145",
-      percentage: "+1.7%",
-      isPositive: false // Higher fees are negative
+// Function to generate user-specific mock data
+export const generateUserMockData = (userId: string, userEmail: string) => {
+  // Create consistent but user-specific data based on user ID hash
+  const hash = userId.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+  const seed = hash % 100;
+  
+  // Base multiplier based on user (between 0.5 and 2.0)
+  const multiplier = 0.5 + (seed / 100) * 1.5;
+  
+  return {
+    userEmail,
+    userId,
+    generatedAt: new Date().toISOString(),
+    ...getMockDataForMultiplier(multiplier)
+  };
+};
+
+// Generate mock data with a multiplier for variation
+export const getMockDataForMultiplier = (multiplier: number = 1) => ({
+  mockPortfolioMetrics: {
+    totalCapital: {
+      value: `$${Math.round(1850000 * multiplier).toLocaleString()}`,
+      change24h: {
+        value: `$${Math.round(45000 * multiplier).toLocaleString()}`,
+        percentage: "+2.5%",
+        isPositive: true
+      }
+    },
+    unrealizedPnL: {
+      value: `$${Math.round(158200 * multiplier).toLocaleString()}`,
+      change24h: {
+        value: `-$${Math.round(8200 * multiplier).toLocaleString()}`,
+        percentage: "-4.9%",
+        isPositive: false
+      }
+    },
+    realizedPnL: {
+      value: `$${Math.round(324500 * multiplier).toLocaleString()}`,
+      change24h: {
+        value: `$${Math.round(12300 * multiplier).toLocaleString()}`,
+        percentage: "+3.9%",
+        isPositive: true
+      }
+    },
+    successRate: {
+      percentage: "78.5%",
+      profitFromWins: Math.round(298400 * multiplier).toString(),
+      totalTrades: Math.round(247 * multiplier),
+      winningTrades: Math.round(194 * multiplier)
+    },
+    totalFees: {
+      value: `$${Math.round(8420 * multiplier).toLocaleString()}`,
+      change24h: {
+        value: `$${Math.round(145 * multiplier).toLocaleString()}`,
+        percentage: "+1.7%",
+        isPositive: false // Higher fees are negative
+      }
     }
   }
-};
+});
+
+// Default mock data (fallback)
+export const mockPortfolioMetrics = getMockDataForMultiplier(1).mockPortfolioMetrics;
 
 export const mockAllocationData = [
   { asset: "BTC", value: 19800.26, percentage: 40.0, color: "#f7931a" },

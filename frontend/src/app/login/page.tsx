@@ -1,11 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { validateLoginForm } from '@/utils/validation';
+import { useAuth } from '@/providers/AuthProvider';
 import { Shield } from 'lucide-react';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { login, isAuthenticated, isLoading: authLoading, error: authError } = useAuth();
+  
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -14,6 +19,13 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [showSecurityTips, setShowSecurityTips] = useState(false);
+
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -42,20 +54,15 @@ export default function LoginPage() {
     if (!validateForm()) return;
 
     setIsLoading(true);
+    setErrors({});
     
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
-      console.log('Login attempt:', formData);
+      await login(formData.email, formData.password);
       
-      // Simulate random failure for demonstration (remove in production)
-      if (Math.random() > 0.7) {
-        throw new Error('Invalid credentials');
-      }
-      
-      // Handle successful login
+      // If login is successful, the useEffect above will handle redirect
       setLoginAttempts(0);
-      // Redirect to dashboard
+      console.log('✅ Login successful, redirecting to dashboard...');
+      
     } catch (error) {
       console.error('Login failed:', error);
       const newAttempts = loginAttempts + 1;
@@ -67,8 +74,9 @@ export default function LoginPage() {
         });
         setShowSecurityTips(true);
       } else {
+        const errorMessage = authError || 'Invalid email or password';
         setErrors({ 
-          email: `Invalid email or password. ${3 - newAttempts} attempts remaining before temporary lockout.` 
+          email: `${errorMessage}. ${3 - newAttempts} attempts remaining before temporary lockout.` 
         });
       }
     } finally {

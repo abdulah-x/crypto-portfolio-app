@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { 
   DollarSign, 
@@ -13,7 +13,9 @@ import {
   Bell,
   Settings,
   Menu,
-  X
+  X,
+  LogOut,
+  ChevronDown
 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -23,7 +25,7 @@ import HoldingsTable from "@/components/dashboard/HoldingsTable";
 import PerformanceChart from "@/components/dashboard/PerformanceChart";
 
 import {
-  mockPortfolioMetrics,
+  generateUserMockData,
   mockAllocationData,
   mockHoldingsData,
   mockPerformanceData,
@@ -34,7 +36,35 @@ export default function NanoBananaDashboard() {
   const [selectedTimeframe, setSelectedTimeframe] = useState("30D");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const { user, isLoading } = useAuth();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const { user, isLoading, logout } = useAuth();
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [userMenuOpen]);
+
+  // Generate user-specific mock data
+  const userMockData = user ? generateUserMockData(user.id, user.email) : null;
+  const mockPortfolioMetrics = userMockData?.mockPortfolioMetrics || {
+    totalCapital: { value: "$0", change24h: { value: "$0", percentage: "0%", isPositive: true } },
+    unrealizedPnL: { value: "$0", change24h: { value: "$0", percentage: "0%", isPositive: true } },
+    realizedPnL: { value: "$0", change24h: { value: "$0", percentage: "0%", isPositive: true } },
+    successRate: { percentage: "0%", profitFromWins: "0", totalTrades: 0, winningTrades: 0 }
+  };
 
   const totalPortfolioValue = mockHoldingsData.reduce((sum, holding) => sum + holding.marketValue, 0);
 
@@ -134,22 +164,60 @@ export default function NanoBananaDashboard() {
               </button>
 
               {/* User Menu */}
-              <div className="flex items-center gap-3 bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 hover:bg-gray-800 transition-colors">
-                <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
-                  {user?.avatar && !imageError ? (
-                    <Image 
-                      src={user.avatar} 
-                      alt="Profile" 
-                      width={32}
-                      height={32}
-                      className="w-8 h-8 rounded-lg object-cover"
-                      onError={() => setImageError(true)}
-                    />
-                  ) : (
-                    <span className="text-white font-bold text-xs">{getInitials()}</span>
-                  )}
-                </div>
-                <span className="text-white font-medium text-sm hidden md:block">{getDisplayName()}</span>
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-3 bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 hover:bg-gray-800 transition-colors"
+                >
+                  <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
+                    {user?.avatar && !imageError ? (
+                      <Image 
+                        src={user.avatar} 
+                        alt="Profile" 
+                        width={32}
+                        height={32}
+                        className="w-8 h-8 rounded-lg object-cover"
+                        onError={() => setImageError(true)}
+                      />
+                    ) : (
+                      <span className="text-white font-bold text-xs">{getInitials()}</span>
+                    )}
+                  </div>
+                  <span className="text-white font-medium text-sm hidden md:block">{getDisplayName()}</span>
+                  <ChevronDown className="w-4 h-4 text-gray-400 hidden md:block" />
+                </button>
+
+                {/* User Dropdown Menu */}
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-50">
+                    <div className="p-3 border-b border-gray-700">
+                      <p className="text-white font-medium text-sm">{getDisplayName()}</p>
+                      <p className="text-gray-400 text-xs">{user?.email}</p>
+                    </div>
+                    <div className="p-1">
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          // Add settings functionality later
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-md transition-colors"
+                      >
+                        <Settings className="w-4 h-4" />
+                        <span className="text-sm">Settings</span>
+                      </button>
+                      <button
+                        onClick={async () => {
+                          setUserMenuOpen(false);
+                          await logout();
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-md transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span className="text-sm">Sign Out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Mobile Menu */}
