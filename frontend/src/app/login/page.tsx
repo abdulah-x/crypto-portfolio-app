@@ -9,7 +9,7 @@ import { Shield } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, isLoading: authLoading, error: authError } = useAuth();
+  const { login, isAuthenticated, isLoading: authLoading, error: authError, user } = useAuth();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -20,12 +20,19 @@ export default function LoginPage() {
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [showSecurityTips, setShowSecurityTips] = useState(false);
 
-  // Redirect to dashboard if already authenticated
+  // Redirect based on authentication and onboarding status
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/dashboard');
+    if (isAuthenticated && user) {
+      // Check if user has completed onboarding
+      const hasCompletedOnboarding = user.hasCompletedOnboarding || localStorage.getItem('hasCompletedOnboarding') === 'true';
+      
+      if (hasCompletedOnboarding) {
+        router.push('/dashboard');
+      } else {
+        router.push('/onboarding');
+      }
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   validateSignupForm, 
   validatePassword, 
@@ -9,9 +10,13 @@ import {
   getPasswordStrengthWidth,
   type ValidationResult 
 } from '@/utils/validation';
+import { useAuth } from '@/providers/AuthProvider';
 import { Eye, EyeOff, Shield } from 'lucide-react';
 
 export default function SignupPage() {
+  const router = useRouter();
+  const { signup, isAuthenticated, error: authError } = useAuth();
+  
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -23,6 +28,13 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<ValidationResult | null>(null);
+
+  // Redirect to onboarding if authenticated (new user)
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/onboarding');
+    }
+  }, [isAuthenticated, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -58,15 +70,23 @@ export default function SignupPage() {
     if (!validateForm()) return;
 
     setIsLoading(true);
+    setErrors({});
     
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
-      console.log('Signup attempt:', formData);
-      // Handle successful signup - redirect to dashboard or verification page
+      await signup(
+        formData.email, 
+        formData.password, 
+        formData.firstName, 
+        formData.lastName,
+        formData.email // Using email as username for now
+      );
+      
+      console.log('Signup successful, redirecting to onboarding...');
+      
     } catch (error) {
       console.error('Signup failed:', error);
-      setErrors({ general: 'An error occurred during registration. Please try again.' });
+      const errorMessage = authError || 'An error occurred during registration. Please try again.';
+      setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
     }

@@ -12,6 +12,8 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   lastLogin?: string;
+  hasCompletedOnboarding?: boolean;
+  avatar?: string;
 }
 
 // Portfolio and Trading Types (matches backend models)

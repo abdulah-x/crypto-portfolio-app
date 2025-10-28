@@ -10,6 +10,7 @@ export interface User {
   provider: 'email' | 'google' | 'apple' | 'github';
   isEmailVerified: boolean;
   createdAt: string;
+  hasCompletedOnboarding?: boolean;
 }
 
 export interface AuthState {
@@ -28,6 +29,7 @@ interface AuthContextType extends AuthState {
   logout: () => Promise<void>;
   clearError: () => void;
   refreshToken: () => Promise<void>;
+  updateUserProfile: (updates: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -395,6 +397,27 @@ export const useAuthState = () => {
     setAuthState(prev => ({ ...prev, error: null }));
   };
 
+  const updateUserProfile = async (updates: Partial<User>): Promise<void> => {
+    try {
+      setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+
+      // For mock implementation, just update local state
+      // In real app, this would call the API
+      setAuthState(prev => ({
+        ...prev,
+        user: prev.user ? { ...prev.user, ...updates } : null,
+        isLoading: false
+      }));
+    } catch (error) {
+      console.error('Profile update error:', error);
+      setAuthState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: 'Failed to update profile'
+      }));
+    }
+  };
+
   return {
     ...authState,
     login,
@@ -405,5 +428,6 @@ export const useAuthState = () => {
     logout,
     clearError,
     refreshToken,
+    updateUserProfile,
   };
 };
