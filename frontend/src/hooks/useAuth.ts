@@ -99,6 +99,7 @@ export const useAuthState = () => {
       const token = localStorage.getItem('vaultx_token');
       if (token && token.startsWith('mock-jwt-token')) {
         // This is a mock token from development mode, restore mock user
+        const hasCompletedOnboarding = localStorage.getItem('hasCompletedOnboarding') === 'true';
         const mockUser = {
           id: 'mock-user-restored',
           email: 'demo@vaultx.com',
@@ -108,6 +109,7 @@ export const useAuthState = () => {
           provider: 'email' as const,
           isEmailVerified: true,
           createdAt: new Date().toISOString(),
+          hasCompletedOnboarding: hasCompletedOnboarding,
         };
         
         setAuthState({
@@ -172,9 +174,12 @@ export const useAuthState = () => {
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Create mock user data
+        // Create mock user data - check if user has completed onboarding before
+        const hasCompletedOnboarding = localStorage.getItem('hasCompletedOnboarding') === 'true';
+        const isReturningUser = localStorage.getItem(`user_${email}_returning`) === 'true';
+        
         const mockUser = {
-          id: 'mock-user-id',
+          id: `mock-user-${email.replace('@', '-').replace('.', '-')}`,
           email: email,
           firstName: 'Demo',
           lastName: 'User',
@@ -182,6 +187,7 @@ export const useAuthState = () => {
           provider: 'email' as const,
           isEmailVerified: true,
           createdAt: new Date().toISOString(),
+          hasCompletedOnboarding: hasCompletedOnboarding && isReturningUser,
         };
         
         // Create mock token
@@ -250,7 +256,7 @@ export const useAuthState = () => {
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 1500));
         
-        // Create mock user data
+        // Create mock user data - new users should NOT have completed onboarding
         const mockUser = {
           id: 'mock-user-' + Math.random().toString(36).substr(2, 9),
           email: email,
@@ -260,6 +266,7 @@ export const useAuthState = () => {
           provider: 'email' as const,
           isEmailVerified: false,
           createdAt: new Date().toISOString(),
+          hasCompletedOnboarding: false, // New users always need onboarding
         };
         
         // Create mock token
@@ -348,6 +355,14 @@ export const useAuthState = () => {
       }
 
       localStorage.removeItem('vaultx_token');
+      localStorage.removeItem('hasCompletedOnboarding');
+      // Clear returning user flags for testing fresh user experience
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('user_') && key.endsWith('_returning')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
       setAuthState({
         user: null,
         isLoading: false,
@@ -358,6 +373,14 @@ export const useAuthState = () => {
       console.error('Logout error:', error);
       // Still clear local state even if backend call fails
       localStorage.removeItem('vaultx_token');
+      localStorage.removeItem('hasCompletedOnboarding');
+      // Clear returning user flags for testing fresh user experience
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('user_') && key.endsWith('_returning')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
       setAuthState({
         user: null,
         isLoading: false,
@@ -408,6 +431,11 @@ export const useAuthState = () => {
         user: prev.user ? { ...prev.user, ...updates } : null,
         isLoading: false
       }));
+
+      // If completing onboarding, mark user as returning user for future logins
+      if (updates.hasCompletedOnboarding && authState.user?.email) {
+        localStorage.setItem(`user_${authState.user.email}_returning`, 'true');
+      }
     } catch (error) {
       console.error('Profile update error:', error);
       setAuthState(prev => ({
