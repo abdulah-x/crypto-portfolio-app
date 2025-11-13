@@ -46,7 +46,7 @@ export default function HoldingsTable({ holdings, totalValue }: HoldingsTablePro
       <div className="p-6 border-b border-gray-800">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-white">ASSET HOLDINGS</h3>
-          <button className="text-gray-400 hover:text-white transition-colors">
+          <button className="text-gray-400 hover:text-white hover:bg-gray-800/50 transition-all duration-200 p-2 rounded-lg">
             <MoreHorizontal className="w-5 h-5" />
           </button>
         </div>
@@ -84,7 +84,11 @@ export default function HoldingsTable({ holdings, totalValue }: HoldingsTablePro
           </thead>
           <tbody className="divide-y divide-gray-800">
             {holdings.map((holding) => (
-              <tr key={holding.id} className="hover:bg-gray-800/30 transition-colors">
+              <tr 
+                key={holding.id} 
+                className="hover:bg-gray-800/50 hover:shadow-lg cursor-pointer transition-all duration-200 group border-l-4 border-transparent hover:border-cyan-500/50"
+                onClick={() => {/* TODO: Navigate to asset detail page */}}
+              >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-full flex items-center justify-center">

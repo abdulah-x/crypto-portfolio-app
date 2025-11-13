@@ -23,6 +23,7 @@ import MetricCard from "@/components/ui/MetricCard";
 import PortfolioOverview from "@/components/dashboard/PortfolioOverview";
 import HoldingsTable from "@/components/dashboard/HoldingsTable";
 import PerformanceChart from "@/components/dashboard/PerformanceChart";
+import DynamicInsights from "@/components/dashboard/DynamicInsights";
 
 import {
   generateUserMockData,
@@ -32,7 +33,7 @@ import {
   sparklineData
 } from "@/data/mockData";
 
-export default function NanoBananaDashboard() {
+export default function Dashboard() {
   const [selectedTimeframe, setSelectedTimeframe] = useState("30D");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -250,7 +251,6 @@ export default function NanoBananaDashboard() {
                 { name: "Dashboard", icon: BarChart3, active: true },
                 { name: "Portfolio", icon: PieChartIcon },
                 { name: "Markets Overview", icon: TrendingUp },
-                { name: "Active Orders", icon: Target },
                 { name: "Trade History", icon: Activity },
                 { name: "Analytics", icon: BarChart3 },
                 { name: "Risk & Exposure", icon: PieChartIcon },
@@ -342,59 +342,14 @@ export default function NanoBananaDashboard() {
             totalValue={totalPortfolioValue}
           />
 
-          {/* Bottom Row - Active Orders and Additional Components */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {/* Active Orders Placeholder */}
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-white">ACTIVE ORDERS (4)</h3>
-                <button className="text-gray-400 hover:text-white transition-colors">
-                  <Settings className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="text-center py-12">
-                <Target className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                <p className="text-gray-400">No active orders</p>
-                <p className="text-sm text-gray-500 mt-2">Your pending orders will appear here</p>
-              </div>
-            </div>
-
-            {/* Risk & Exposure Placeholder */}
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-white">PERFORMANCE & INSIGHTS</h3>
-                <button className="text-gray-400 hover:text-white transition-colors">
-                  <Settings className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Best Performer</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-emerald-400 font-medium">SOL/USDT (+5.2%)</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Worst Performer</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-red-400 font-medium">ETH/USDT (-1.8%)</span>
-                  </div>
-                </div>
-                <div className="pt-4 border-t border-gray-800">
-                  <p className="text-sm text-gray-400 mb-4">
-                    Your portfolio volatility is reverse-similar to Consider rebalancing for optimal risk management.
-                  </p>
-                  <div className="flex gap-2">
-                    <button className="flex-1 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors text-sm font-medium">
-                      Transfer
-                    </button>
-                    <button className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium">
-                      Trade
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* Bottom Row - Dynamic Insights */}
+          <div className="grid grid-cols-1 gap-6">
+            {/* Dynamic Insights */}
+            <DynamicInsights 
+              holdings={mockHoldingsData}
+              metrics={mockPortfolioMetrics}
+              totalValue={totalPortfolioValue}
+            />
           </div>
         </main>
 
@@ -405,29 +360,36 @@ export default function NanoBananaDashboard() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-white">WATCHLIST</h3>
-                <button className="text-gray-400 hover:text-white transition-colors">
+                <button className="text-gray-400 hover:text-white hover:bg-gray-800/50 transition-all duration-200 p-2 rounded-lg">
                   <Settings className="w-4 h-4" />
                 </button>
               </div>
               <div className="space-y-3">
                 {[
-                  { symbol: "XRP", price: "$0.52", change: "+2.1%", positive: true },
-                  { symbol: "AVAX", price: "$36.24", change: "-1.5%", positive: false },
-                  { symbol: "LINK", price: "$14.83", change: "+0.8%", positive: true },
-                  { symbol: "UNI", price: "$7.22", change: "-0.3%", positive: false }
+                  { symbol: "XRP", name: "Ripple", price: "$0.52", change: "+2.1%", positive: true, color: "from-purple-500 to-pink-500" },
+                  { symbol: "AVAX", name: "Avalanche", price: "$36.24", change: "-1.5%", positive: false, color: "from-red-500 to-orange-500" },
+                  { symbol: "LINK", name: "Chainlink", price: "$14.83", change: "+0.8%", positive: true, color: "from-blue-500 to-cyan-500" },
+                  { symbol: "UNI", name: "Uniswap", price: "$7.22", change: "-0.3%", positive: false, color: "from-pink-500 to-rose-500" }
                 ].map((asset) => (
-                  <div key={asset.symbol} className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                  <div 
+                    key={asset.symbol} 
+                    className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg hover:bg-gray-800/80 cursor-pointer transition-all duration-200 border border-transparent hover:border-cyan-500/30 group"
+                    onClick={() => {/* TODO: Navigate to asset detail */}}
+                  >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                      <div className={`w-8 h-8 bg-gradient-to-br ${asset.color} rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-200`}>
                         <span className="text-xs font-bold text-white">{asset.symbol[0]}</span>
                       </div>
                       <div>
-                        <div className="text-sm font-medium text-white">{asset.symbol}</div>
-                        <div className="text-xs text-gray-400">{asset.price}</div>
+                        <div className="text-sm font-medium text-white group-hover:text-cyan-400 transition-colors">{asset.symbol}</div>
+                        <div className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors">{asset.name}</div>
                       </div>
                     </div>
-                    <div className={`text-sm font-medium ${asset.positive ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {asset.change}
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-white">{asset.price}</div>
+                      <div className={`text-xs font-medium ${asset.positive ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {asset.change}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -438,19 +400,19 @@ export default function NanoBananaDashboard() {
             <div>
               <h3 className="text-lg font-bold text-white mb-4">ALERTS & NOTIFICATIONS</h3>
               <div className="space-y-3">
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/15 hover:border-emerald-500/40 transition-all duration-200 cursor-pointer group">
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full group-hover:scale-125 transition-transform"></div>
                     <span className="text-sm font-medium text-emerald-400">Price Alert</span>
                   </div>
-                  <p className="text-xs text-gray-300">BTC reached $67,800</p>
+                  <p className="text-xs text-gray-300 group-hover:text-white transition-colors">BTC reached target of $67,800</p>
                 </div>
-                <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg hover:bg-blue-500/15 hover:border-blue-500/40 transition-all duration-200 cursor-pointer group">
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full group-hover:scale-125 transition-transform"></div>
                     <span className="text-sm font-medium text-blue-400">Portfolio Alert</span>
                   </div>
-                  <p className="text-xs text-gray-300">Portfolio up 12% this week</p>
+                  <p className="text-xs text-gray-300 group-hover:text-white transition-colors">Portfolio gained 12% this week</p>
                 </div>
               </div>
             </div>

@@ -1,4 +1,5 @@
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { useState } from 'react';
 
 interface PortfolioAllocation {
   asset: string;
@@ -29,6 +30,32 @@ export default function PortfolioOverview({
   dayChange, 
   weekChange 
 }: PortfolioOverviewProps) {
+  const [hoveredSlice, setHoveredSlice] = useState<string | null>(null);
+
+  // Group small allocations into "Others" (anything below 3%)
+  const processedAllocationData = (() => {
+    const threshold = 3;
+    const mainAssets = allocationData.filter(item => item.percentage >= threshold);
+    const smallAssets = allocationData.filter(item => item.percentage < threshold);
+    
+    if (smallAssets.length > 0) {
+      const othersValue = smallAssets.reduce((sum, item) => sum + item.value, 0);
+      const othersPercentage = smallAssets.reduce((sum, item) => sum + item.percentage, 0);
+      
+      return [
+        ...mainAssets,
+        {
+          asset: 'Others',
+          value: othersValue,
+          percentage: othersPercentage,
+          color: '#8b5cf6'
+        }
+      ];
+    }
+    
+    return mainAssets;
+  })();
+
   // Custom label rendering function for pie slices
   const renderCustomLabel = (entry: any) => {
     const { cx, cy, midAngle, innerRadius, outerRadius, percent, asset } = entry;
@@ -58,111 +85,137 @@ export default function PortfolioOverview({
     );
   };
 
+  // Custom tooltip component
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-gray-800 border border-gray-600 rounded-lg p-3 shadow-xl">
+          <div className="text-white font-bold text-lg">{data.asset}</div>
+          <div className="text-cyan-400 font-semibold">{data.percentage.toFixed(1)}%</div>
+          <div className="text-gray-300">${data.value.toLocaleString()}</div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
-    <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-6 hover:bg-gray-900/60 transition-all duration-300">
+      <div className="flex items-center justify-center mb-6">
         <h3 className="text-lg font-bold text-white">PORTFOLIO OVERVIEW</h3>
-        <button className="text-gray-400 hover:text-white transition-colors">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Portfolio Donut Chart */}
-        <div className="flex flex-col items-center">
-          <div className="relative w-80 h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={allocationData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={renderCustomLabel}
-                  outerRadius={140}
-                  innerRadius={85}
-                  startAngle={90}
-                  endAngle={450}
-                  paddingAngle={2}
-                  dataKey="value"
-                  stroke="#1e293b"
-                  strokeWidth={2}
-                >
-                  {allocationData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-            
-            {/* Perfectly Centered Label */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="text-center">
-                <div className="text-xs font-medium text-gray-400 mb-1 uppercase tracking-wider">Total Balance</div>
-                <div className="text-3xl font-bold text-white tracking-tight">{totalBalance}</div>
-              </div>
-            </div>
-          </div>
+      {/* Enhanced Single Column Layout with Interactive Chart */}
+      <div className="flex flex-col items-center w-full">
+        {/* Interactive Donut Chart */}
+        <div className="relative w-full max-w-md h-80 mb-6 flex justify-center">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={processedAllocationData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={renderCustomLabel}
+                outerRadius={120}
+                innerRadius={80}
+                startAngle={90}
+                endAngle={450}
+                paddingAngle={3}
+                dataKey="value"
+                stroke="#1e293b"
+                strokeWidth={3}
+                onMouseEnter={(data) => setHoveredSlice(data.asset)}
+                onMouseLeave={() => setHoveredSlice(null)}
+                style={{ cursor: 'pointer' }}
+              >
+                {processedAllocationData.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color}
+                    fillOpacity={hoveredSlice === null || hoveredSlice === entry.asset ? 1 : 0.6}
+                    style={{
+                      filter: hoveredSlice === entry.asset ? 'brightness(1.2)' : 'none',
+                      transition: 'all 0.2s ease'
+                    }}
+                  />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomTooltip />} />
+            </PieChart>
+          </ResponsiveContainer>
           
-          {/* Change Summary Below Chart */}
-          <div className="mt-4 space-y-2 text-center">
-            <div className="flex items-center justify-center gap-4">
-              <div className="text-center">
-                <div className="text-xs text-gray-400">24h Change</div>
-                <div className={`text-sm font-bold ${
-                  dayChange.isPositive ? 'text-emerald-400' : 'text-red-400'
-                }`}>
-                  {dayChange.value} ({dayChange.percentage})
+          {/* Enhanced Center Label */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="text-center">
+              <div className="text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">Total Balance</div>
+              <div className="text-4xl font-bold text-white tracking-tight mb-1">{totalBalance}</div>
+              {hoveredSlice && (
+                <div className="text-sm text-cyan-400 font-medium animate-fade-in">
+                  Hovering: {hoveredSlice}
                 </div>
-              </div>
-              <div className="text-center">
-                <div className="text-xs text-gray-400">7d Change</div>
-                <div className={`text-sm font-bold ${
-                  weekChange.isPositive ? 'text-emerald-400' : 'text-red-400'
-                }`}>
-                  {weekChange.value} ({weekChange.percentage})
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
-
-        {/* Detailed Asset Summary */}
-        <div className="space-y-4">
-          <div className="mb-6">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">Detailed Summary</h4>
-            
-            {/* Enhanced Asset List with more details */}
-            <div className="space-y-3">
-              {allocationData.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition-colors border border-gray-700/50">
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-5 h-5 rounded-full border-2 border-gray-600 shadow-sm"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <div>
-                      <span className="text-sm font-bold text-white block">{item.asset}</span>
-                      <span className="text-xs text-gray-400">Allocation</span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-white">{item.percentage}%</div>
-                    <div className="text-sm text-gray-300 font-medium">${item.value.toLocaleString()}</div>
-                  </div>
-                </div>
-              ))}
+        
+        {/* Performance Summary Below Chart */}
+        <div className="w-full max-w-md">
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="text-center p-4 bg-gray-800/40 rounded-lg border border-gray-700/50 hover:bg-gray-800/60 transition-colors">
+              <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">24h Change</div>
+              <div className={`text-lg font-bold ${
+                dayChange.isPositive ? 'text-emerald-400' : 'text-red-400'
+              }`}>
+                {dayChange.value}
+              </div>
+              <div className={`text-sm ${
+                dayChange.isPositive ? 'text-emerald-400' : 'text-red-400'
+              }`}>
+                {dayChange.percentage}
+              </div>
+            </div>
+            <div className="text-center p-4 bg-gray-800/40 rounded-lg border border-gray-700/50 hover:bg-gray-800/60 transition-colors">
+              <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">7d Change</div>
+              <div className={`text-lg font-bold ${
+                weekChange.isPositive ? 'text-emerald-400' : 'text-red-400'
+              }`}>
+                {weekChange.value}
+              </div>
+              <div className={`text-sm ${
+                weekChange.isPositive ? 'text-emerald-400' : 'text-red-400'
+              }`}>
+                {weekChange.percentage}
+              </div>
             </div>
           </div>
 
+          {/* Compact Asset Legend */}
+          <div className="grid grid-cols-2 gap-2 mb-6">
+            {processedAllocationData.map((item, index) => (
+              <div 
+                key={index} 
+                className="flex items-center gap-2 p-2 rounded-md hover:bg-gray-800/30 transition-colors cursor-pointer"
+                onMouseEnter={() => setHoveredSlice(item.asset)}
+                onMouseLeave={() => setHoveredSlice(null)}
+              >
+                <div 
+                  className="w-3 h-3 rounded-full shadow-sm"
+                  style={{ backgroundColor: item.color }}
+                />
+                <span className="text-sm font-medium text-white">{item.asset}</span>
+                <span className="text-sm text-cyan-400 ml-auto font-semibold">{item.percentage.toFixed(1)}%</span>
+              </div>
+            ))}
+          </div>
+
           {/* Action Buttons */}
-          <div className="flex gap-3 mt-6">
-            <button className="flex-1 px-4 py-3 bg-gray-800/50 hover:bg-gray-700 text-white rounded-lg transition-colors text-sm font-bold border border-gray-700 hover:border-gray-600">
+          <div className="flex gap-3">
+            <button className="flex-1 px-4 py-3 bg-gray-800/50 hover:bg-gray-700/70 text-white rounded-lg transition-all text-sm font-medium border border-gray-700 hover:border-gray-600 hover:shadow-md">
               View Details
             </button>
-            <button className="flex-1 px-4 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white rounded-lg transition-all text-sm font-bold shadow-lg">
+            <button className="flex-1 px-4 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white rounded-lg transition-all text-sm font-medium shadow-lg hover:shadow-xl">
               Rebalance
             </button>
           </div>
