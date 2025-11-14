@@ -32,9 +32,9 @@ export default function PortfolioOverview({
 }: PortfolioOverviewProps) {
   const [hoveredSlice, setHoveredSlice] = useState<string | null>(null);
 
-  // Group small allocations into "Others" (anything below 3%)
+  // Group small allocations into "Others" (anything below 5%)
   const processedAllocationData = (() => {
-    const threshold = 3;
+    const threshold = 5;
     const mainAssets = allocationData.filter(item => item.percentage >= threshold);
     const smallAssets = allocationData.filter(item => item.percentage < threshold);
     
@@ -64,8 +64,8 @@ export default function PortfolioOverview({
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
-    // Only show labels for slices > 5% to avoid clutter
-    if (percent < 0.05) return null;
+    // Only show labels for slices > 8% to avoid clutter
+    if (percent < 0.08) return null;
 
     return (
       <text 
@@ -85,15 +85,17 @@ export default function PortfolioOverview({
     );
   };
 
-  // Custom tooltip component
+  // Enhanced custom tooltip component
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-gray-800 border border-gray-600 rounded-lg p-3 shadow-xl">
-          <div className="text-white font-bold text-lg">{data.asset}</div>
-          <div className="text-cyan-400 font-semibold">{data.percentage.toFixed(1)}%</div>
-          <div className="text-gray-300">${data.value.toLocaleString()}</div>
+        <div className="bg-gray-900 border border-cyan-500/50 rounded-xl p-4 shadow-2xl backdrop-blur-sm">
+          <div className="text-white font-bold text-xl mb-2">{data.asset}</div>
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-cyan-400 font-semibold text-lg">{data.percentage.toFixed(1)}%</span>
+            <span className="text-emerald-400 font-bold text-lg">${data.value.toLocaleString()}</span>
+          </div>
         </div>
       );
     }
@@ -189,25 +191,6 @@ export default function PortfolioOverview({
                 {weekChange.percentage}
               </div>
             </div>
-          </div>
-
-          {/* Compact Asset Legend */}
-          <div className="grid grid-cols-2 gap-2 mb-6">
-            {processedAllocationData.map((item, index) => (
-              <div 
-                key={index} 
-                className="flex items-center gap-2 p-2 rounded-md hover:bg-gray-800/30 transition-colors cursor-pointer"
-                onMouseEnter={() => setHoveredSlice(item.asset)}
-                onMouseLeave={() => setHoveredSlice(null)}
-              >
-                <div 
-                  className="w-3 h-3 rounded-full shadow-sm"
-                  style={{ backgroundColor: item.color }}
-                />
-                <span className="text-sm font-medium text-white">{item.asset}</span>
-                <span className="text-sm text-cyan-400 ml-auto font-semibold">{item.percentage.toFixed(1)}%</span>
-              </div>
-            ))}
           </div>
 
           {/* Action Buttons */}
