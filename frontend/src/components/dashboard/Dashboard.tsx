@@ -21,16 +21,16 @@ import { useAuth } from "@/providers/AuthProvider";
 
 import MetricCard from "@/components/ui/MetricCard";
 import PortfolioOverview from "@/components/dashboard/PortfolioOverview";
+import PortfolioHeatmap from "@/components/dashboard/PortfolioHeatmap";
 import HoldingsTable from "@/components/dashboard/HoldingsTable";
 import PerformanceChart from "@/components/dashboard/PerformanceChart";
-import DynamicInsights from "@/components/dashboard/DynamicInsights";
 
 import {
   generateUserMockData,
   mockAllocationData,
   mockHoldingsData,
   mockPerformanceData,
-  sparklineData
+  mockExtendedPerformanceData
 } from "@/data/mockData";
 
 export default function Dashboard() {
@@ -40,6 +40,30 @@ export default function Dashboard() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, isLoading, logout } = useAuth();
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Get filtered performance data based on timeframe
+  const getPerformanceData = (timeframe: string) => {
+    const allData = mockExtendedPerformanceData;
+    
+    switch (timeframe) {
+      case '7D':
+        return allData.slice(-8); // Last 8 data points for 7 days
+      case '30D':
+        return allData.slice(-5); // Last 5 data points for 30 days
+      case '90D':
+        return allData.slice(-7); // Last 7 data points for 90 days
+      case '1Y':
+        return allData; // All available data
+      case 'ALL':
+        return allData; // All available data
+      default:
+        return allData.slice(-5); // Default to 30D
+    }
+  };
+
+  const handleTimeframeChange = (timeframe: string) => {
+    setSelectedTimeframe(timeframe);
+  };
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -274,150 +298,95 @@ export default function Dashboard() {
 
         {/* Main Content */}
         <main className="flex-1 p-6 space-y-6 relative z-10">
-          {/* Top KPI Cards */}
+          {/* Top KPI Cards - Simplified Minimal Design */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <MetricCard
               title="Total Capital"
               value={mockPortfolioMetrics.totalCapital.value}
-              change={mockPortfolioMetrics.totalCapital.change24h}
-              sparklineData={sparklineData}
+              change={{
+                value: mockPortfolioMetrics.totalCapital.change24h.value,
+                percentage: mockPortfolioMetrics.totalCapital.change24h.percentage,
+                isPositive: mockPortfolioMetrics.totalCapital.change24h.isPositive
+              }}
               icon={<DollarSign className="w-5 h-5 text-cyan-500" />}
             />
             <MetricCard
               title="Unrealized P&L"
               value={mockPortfolioMetrics.unrealizedPnL.value}
-              change={mockPortfolioMetrics.unrealizedPnL.change24h}
-              subtitle="Open Positions"
-              sparklineData={sparklineData.map(val => val * 0.8)} // Different trend
+              change={{
+                value: mockPortfolioMetrics.unrealizedPnL.change24h.value,
+                percentage: mockPortfolioMetrics.unrealizedPnL.change24h.percentage,
+                isPositive: mockPortfolioMetrics.unrealizedPnL.change24h.isPositive
+              }}
               icon={<TrendingUp className="w-5 h-5 text-amber-500" />}
             />
             <MetricCard
               title="Realized P&L"
               value={mockPortfolioMetrics.realizedPnL.value}
-              change={mockPortfolioMetrics.realizedPnL.change24h}
-              subtitle="Closed Positions"
-              sparklineData={sparklineData.map(val => val * 1.2)} // Different trend
+              change={{
+                value: mockPortfolioMetrics.realizedPnL.change24h.value,
+                percentage: mockPortfolioMetrics.realizedPnL.change24h.percentage,
+                isPositive: mockPortfolioMetrics.realizedPnL.change24h.isPositive
+              }}
               icon={<Target className="w-5 h-5 text-emerald-500" />}
             />
             <MetricCard
               title="Success Rate"
               value={mockPortfolioMetrics.successRate.percentage}
               change={{
-                value: `${mockPortfolioMetrics.successRate.winningTrades}/${mockPortfolioMetrics.successRate.totalTrades} trades`,
-                percentage: `$${parseInt(mockPortfolioMetrics.successRate.profitFromWins).toLocaleString()} profit`,
+                value: `${mockPortfolioMetrics.successRate.winningTrades} / ${mockPortfolioMetrics.successRate.totalTrades} trades`,
                 isPositive: true
               }}
-              subtitle="Winning Trades"
               icon={<PieChartIcon className="w-5 h-5 text-blue-500" />}
             />
           </div>
 
-          {/* Portfolio Overview and Performance Chart */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <PortfolioOverview
-              totalBalance="$49,500.65"
-              allocationData={mockAllocationData}
-              dayChange={{
-                value: "+$2,845.23",
-                percentage: "+6.1%",
-                isPositive: true
-              }}
-              weekChange={{
-                value: "+$8,922.15",
-                percentage: "+21.9%",
-                isPositive: true
-              }}
-            />
+          {/* 2-Column Layout: Portfolio Growth (60%) + Portfolio Overview (40%) */}
+          <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+            {/* Portfolio Growth Chart - Takes up 60% (3/5) */}
+            <div className="xl:col-span-3">
+              <PerformanceChart
+                data={getPerformanceData(selectedTimeframe)}
+                timeframe={selectedTimeframe}
+                onTimeframeChange={handleTimeframeChange}
+              />
+            </div>
+            
+            {/* Portfolio Overview Donut Chart - Takes up 40% (2/5) */}
+            <div className="xl:col-span-2">
+              <PortfolioOverview 
+                totalBalance="$3,478,000"
+                allocationData={mockAllocationData}
+                dayChange={{
+                  value: "-$84,600",
+                  percentage: "-2.4%",
+                  isPositive: false
+                }}
+                weekChange={{
+                  value: "+$156,200",
+                  percentage: "+4.7%",
+                  isPositive: true
+                }}
+              />
+            </div>
+          </div>
 
-            <PerformanceChart
-              data={mockPerformanceData}
-              timeframe={selectedTimeframe}
-              onTimeframeChange={setSelectedTimeframe}
+          {/* Holdings Table - Full Width */}
+          <div>
+            <HoldingsTable 
+              holdings={mockHoldingsData}
+              totalValue={totalPortfolioValue}
             />
           </div>
 
-          {/* Holdings Table */}
-          <HoldingsTable 
-            holdings={mockHoldingsData}
-            totalValue={totalPortfolioValue}
-          />
-
-          {/* Bottom Row - Dynamic Insights */}
-          <div className="grid grid-cols-1 gap-6">
-            {/* Dynamic Insights */}
-            <DynamicInsights 
+          {/* Portfolio Heatmap - Full Width Modern Visualization */}
+          <div>
+            <PortfolioHeatmap 
               holdings={mockHoldingsData}
-              metrics={mockPortfolioMetrics}
               totalValue={totalPortfolioValue}
             />
           </div>
         </main>
-
-        {/* Right Sidebar - Watchlist */}
-        <aside className="hidden xl:block w-80 bg-gray-900/50 backdrop-blur-xl border-l border-gray-800 p-6">
-          <div className="space-y-6">
-            {/* Watchlist */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-white">WATCHLIST</h3>
-                <button className="text-gray-400 hover:text-white hover:bg-gray-800/50 transition-all duration-200 p-2 rounded-lg">
-                  <Settings className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="space-y-3">
-                {[
-                  { symbol: "XRP", name: "Ripple", price: "$0.52", change: "+2.1%", positive: true, color: "from-purple-500 to-pink-500" },
-                  { symbol: "AVAX", name: "Avalanche", price: "$36.24", change: "-1.5%", positive: false, color: "from-red-500 to-orange-500" },
-                  { symbol: "LINK", name: "Chainlink", price: "$14.83", change: "+0.8%", positive: true, color: "from-blue-500 to-cyan-500" },
-                  { symbol: "UNI", name: "Uniswap", price: "$7.22", change: "-0.3%", positive: false, color: "from-pink-500 to-rose-500" }
-                ].map((asset) => (
-                  <div 
-                    key={asset.symbol} 
-                    className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg hover:bg-gray-800/80 cursor-pointer transition-all duration-200 border border-transparent hover:border-cyan-500/30 group"
-                    onClick={() => {/* TODO: Navigate to asset detail */}}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 bg-gradient-to-br ${asset.color} rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-200`}>
-                        <span className="text-xs font-bold text-white">{asset.symbol[0]}</span>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-white group-hover:text-cyan-400 transition-colors">{asset.symbol}</div>
-                        <div className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors">{asset.name}</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-white">{asset.price}</div>
-                      <div className={`text-xs font-medium ${asset.positive ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {asset.change}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Alerts & Notifications */}
-            <div>
-              <h3 className="text-lg font-bold text-white mb-4">ALERTS & NOTIFICATIONS</h3>
-              <div className="space-y-3">
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/15 hover:border-emerald-500/40 transition-all duration-200 cursor-pointer group">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full group-hover:scale-125 transition-transform"></div>
-                    <span className="text-sm font-medium text-emerald-400">Price Alert</span>
-                  </div>
-                  <p className="text-xs text-gray-300 group-hover:text-white transition-colors">BTC reached target of $67,800</p>
-                </div>
-                <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg hover:bg-blue-500/15 hover:border-blue-500/40 transition-all duration-200 cursor-pointer group">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full group-hover:scale-125 transition-transform"></div>
-                    <span className="text-sm font-medium text-blue-400">Portfolio Alert</span>
-                  </div>
-                  <p className="text-xs text-gray-300 group-hover:text-white transition-colors">Portfolio gained 12% this week</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </aside>
       </div>
     </div>
   );

@@ -142,13 +142,32 @@ export const mockHoldingsData = [
 ];
 
 export const mockPerformanceData = [
-  { date: "Jan", totalValue: 1200000, realizedPnL: 50000, unrealizedPnL: 25000 },
-  { date: "Feb", totalValue: 1350000, realizedPnL: 75000, unrealizedPnL: 45000 },
-  { date: "Mar", totalValue: 1280000, realizedPnL: 65000, unrealizedPnL: 15000 },
-  { date: "Apr", totalValue: 1450000, realizedPnL: 95000, unrealizedPnL: 85000 },
-  { date: "May", totalValue: 1620000, realizedPnL: 125000, unrealizedPnL: 125000 },
-  { date: "Jun", totalValue: 1750000, realizedPnL: 150000, unrealizedPnL: 175000 },
-  { date: "Jul", totalValue: 1850000, realizedPnL: 185000, unrealizedPnL: 215000 }
+  // 7D data
+  { date: "Dec 7", totalValue: 1650000, realizedPnL: 145000, unrealizedPnL: 185000 },
+  { date: "Dec 8", totalValue: 1680000, realizedPnL: 148000, unrealizedPnL: 195000 },
+  { date: "Dec 9", totalValue: 1720000, realizedPnL: 152000, unrealizedPnL: 210000 },
+  { date: "Dec 10", totalValue: 1690000, realizedPnL: 150000, unrealizedPnL: 185000 },
+  { date: "Dec 11", totalValue: 1755000, realizedPnL: 158000, unrealizedPnL: 225000 },
+  { date: "Dec 12", totalValue: 1790000, realizedPnL: 165000, unrealizedPnL: 240000 },
+  { date: "Dec 13", totalValue: 1820000, realizedPnL: 172000, unrealizedPnL: 255000 },
+  { date: "Today", totalValue: 1850000, realizedPnL: 185000, unrealizedPnL: 275000 },
+];
+
+// Extended data for longer timeframes - you can add more data points here
+export const mockExtendedPerformanceData = [
+  // 90D+ historical data
+  { date: "Sep", totalValue: 1200000, realizedPnL: 50000, unrealizedPnL: 25000 },
+  { date: "Oct", totalValue: 1350000, realizedPnL: 75000, unrealizedPnL: 45000 },
+  { date: "Nov", totalValue: 1480000, realizedPnL: 115000, unrealizedPnL: 125000 },
+  { date: "Dec 1", totalValue: 1520000, realizedPnL: 125000, unrealizedPnL: 145000 },
+  { date: "Dec 7", totalValue: 1650000, realizedPnL: 145000, unrealizedPnL: 185000 },
+  { date: "Dec 8", totalValue: 1680000, realizedPnL: 148000, unrealizedPnL: 195000 },
+  { date: "Dec 9", totalValue: 1720000, realizedPnL: 152000, unrealizedPnL: 210000 },
+  { date: "Dec 10", totalValue: 1690000, realizedPnL: 150000, unrealizedPnL: 185000 },
+  { date: "Dec 11", totalValue: 1755000, realizedPnL: 158000, unrealizedPnL: 225000 },
+  { date: "Dec 12", totalValue: 1790000, realizedPnL: 165000, unrealizedPnL: 240000 },
+  { date: "Dec 13", totalValue: 1820000, realizedPnL: 172000, unrealizedPnL: 255000 },
+  { date: "Today", totalValue: 1850000, realizedPnL: 185000, unrealizedPnL: 275000 },
 ];
 
 export const mockActiveOrders = [
