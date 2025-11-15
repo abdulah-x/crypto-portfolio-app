@@ -1,4 +1,4 @@
-import { XAxis, YAxis, CartesianGrid, ResponsiveContainer, Area, AreaChart, Tooltip, ReferenceLine } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, ResponsiveContainer, Area, Line, ComposedChart, Tooltip } from 'recharts';
 import { useState, useMemo } from 'react';
 
 interface PerformanceData {
@@ -90,12 +90,17 @@ export default function PerformanceChart({
     }
   };
 
-  // Calculate max values for proper scaling
-  const maxTotalValue = Math.max(...filteredData.map(d => d.totalValue));
-  const maxPnL = Math.max(
-    ...filteredData.map(d => Math.max(d.realizedPnL, d.unrealizedPnL))
-  );
-  const yAxisDomain = [0, maxTotalValue * 1.1]; // Add 10% padding at the top
+  // Calculate min and max values for proper scaling
+  const allValues = filteredData.flatMap(d => [d.totalValue, d.realizedPnL, d.unrealizedPnL]);
+  const minValue = Math.min(...allValues);
+  const maxValue = Math.max(...allValues);
+  
+  // Create domain with padding for better visualization
+  const padding = (maxValue - minValue) * 0.1;
+  const yAxisDomain = [
+    Math.max(0, minValue - padding), 
+    maxValue + padding
+  ];
 
   // Calculate period performance
   const firstValue = filteredData[0]?.totalValue || 0;
@@ -128,7 +133,7 @@ export default function PerformanceChart({
       {/* Chart Container */}
       <div className="h-80 mt-4 relative">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart 
+          <ComposedChart 
             data={filteredData} 
             margin={{ top: 20, right: 30, left: 40, bottom: 20 }}
           >
@@ -139,16 +144,6 @@ export default function PerformanceChart({
                 <stop offset="30%" stopColor="#06b6d4" stopOpacity={0.3} />
                 <stop offset="70%" stopColor="#0891b2" stopOpacity={0.1} />
                 <stop offset="95%" stopColor="#0c4a6e" stopOpacity={0.05} />
-              </linearGradient>
-              <linearGradient id="realizedGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                <stop offset="50%" stopColor="#059669" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#047857" stopOpacity={0.05} />
-              </linearGradient>
-              <linearGradient id="unrealizedGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
-                <stop offset="50%" stopColor="#d97706" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#b45309" stopOpacity={0.05} />
               </linearGradient>
             </defs>
             
@@ -170,7 +165,9 @@ export default function PerformanceChart({
               dy={10}
             />
             
+            {/* Primary Y-axis for Total Value */}
             <YAxis 
+              yAxisId="left"
               stroke="#6b7280"
               fontSize={12}
               tickLine={false}
@@ -181,14 +178,28 @@ export default function PerformanceChart({
               domain={yAxisDomain}
             />
             
+            {/* Secondary Y-axis for PnL values */}
+            <YAxis 
+              yAxisId="right"
+              orientation="right"
+              stroke="#6b7280"
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={formatPnLValue}
+              tick={{ fill: '#9ca3af', fontSize: 12 }}
+              dx={10}
+            />
+            
             <Tooltip content={<CustomTooltip />} />
             
-            {/* Total Value Area - Primary */}
+            {/* Total Value Area - Primary axis */}
             <Area
+              yAxisId="left"
               type="monotone"
               dataKey="totalValue"
               stroke="#22d3ee"
-              strokeWidth={3}
+              strokeWidth={4}
               fill="url(#totalValueGradient)"
               dot={false}
               activeDot={{ 
@@ -201,16 +212,16 @@ export default function PerformanceChart({
               name="Total Value"
             />
             
-            {/* Realized PnL Area */}
-            <Area
+            {/* Realized PnL Line - Secondary axis */}
+            <Line
+              yAxisId="right"
               type="monotone"
               dataKey="realizedPnL"
               stroke="#10b981"
-              strokeWidth={2}
-              fill="url(#realizedGradient)"
-              dot={false}
+              strokeWidth={3}
+              dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
               activeDot={{ 
-                r: 6, 
+                r: 7, 
                 stroke: '#10b981', 
                 strokeWidth: 2, 
                 fill: '#0f172a'
@@ -218,23 +229,23 @@ export default function PerformanceChart({
               name="Realized PnL"
             />
             
-            {/* Unrealized PnL Area */}
-            <Area
+            {/* Unrealized PnL Line - Secondary axis */}
+            <Line
+              yAxisId="right"
               type="monotone"
               dataKey="unrealizedPnL"
               stroke="#f59e0b"
-              strokeWidth={2}
-              fill="url(#unrealizedGradient)"
-              dot={false}
+              strokeWidth={3}
+              dot={{ fill: '#f59e0b', strokeWidth: 2, r: 4 }}
               activeDot={{ 
-                r: 6, 
+                r: 7, 
                 stroke: '#f59e0b', 
                 strokeWidth: 2, 
                 fill: '#0f172a'
               }}
               name="Unrealized PnL"
             />
-          </AreaChart>
+          </ComposedChart>
         </ResponsiveContainer>
         
         {/* Animated gradient overlay for extra visual appeal */}

@@ -1,9 +1,10 @@
 // Mock data for the crypto portfolio dashboard
 
 // Function to generate user-specific mock data
-export const generateUserMockData = (userId: string, userEmail: string) => {
+export const generateUserMockData = (userId: string | number, userEmail: string) => {
   // Create consistent but user-specific data based on user ID hash
-  const hash = userId.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+  const userIdString = String(userId);
+  const hash = userIdString.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
   const seed = hash % 100;
   
   // Base multiplier based on user (between 0.5 and 2.0)
@@ -11,7 +12,7 @@ export const generateUserMockData = (userId: string, userEmail: string) => {
   
   return {
     userEmail,
-    userId,
+    userId: userIdString,
     generatedAt: new Date().toISOString(),
     ...getMockDataForMultiplier(multiplier)
   };
@@ -141,34 +142,72 @@ export const mockHoldingsData = [
   }
 ];
 
-export const mockPerformanceData = [
-  // 7D data
-  { date: "Dec 7", totalValue: 1650000, realizedPnL: 145000, unrealizedPnL: 185000 },
-  { date: "Dec 8", totalValue: 1680000, realizedPnL: 148000, unrealizedPnL: 195000 },
-  { date: "Dec 9", totalValue: 1720000, realizedPnL: 152000, unrealizedPnL: 210000 },
-  { date: "Dec 10", totalValue: 1690000, realizedPnL: 150000, unrealizedPnL: 185000 },
-  { date: "Dec 11", totalValue: 1755000, realizedPnL: 158000, unrealizedPnL: 225000 },
-  { date: "Dec 12", totalValue: 1790000, realizedPnL: 165000, unrealizedPnL: 240000 },
-  { date: "Dec 13", totalValue: 1820000, realizedPnL: 172000, unrealizedPnL: 255000 },
-  { date: "Today", totalValue: 1850000, realizedPnL: 185000, unrealizedPnL: 275000 },
-];
+// Comprehensive performance data with realistic fluctuations
+export const mockPerformanceData = {
+  '7D': [
+    { date: "Nov 8", totalValue: 1720000, realizedPnL: 145000, unrealizedPnL: 165000 },
+    { date: "Nov 9", totalValue: 1680000, realizedPnL: 148000, unrealizedPnL: 125000 },
+    { date: "Nov 10", totalValue: 1750000, realizedPnL: 152000, unrealizedPnL: 185000 },
+    { date: "Nov 11", totalValue: 1690000, realizedPnL: 150000, unrealizedPnL: 145000 },
+    { date: "Nov 12", totalValue: 1820000, realizedPnL: 158000, unrealizedPnL: 215000 },
+    { date: "Nov 13", totalValue: 1790000, realizedPnL: 165000, unrealizedPnL: 195000 },
+    { date: "Nov 14", totalValue: 1850000, realizedPnL: 172000, unrealizedPnL: 235000 },
+    { date: "Today", totalValue: 1875000, realizedPnL: 185000, unrealizedPnL: 255000 }
+  ],
+  '30D': [
+    { date: "Oct 15", totalValue: 1420000, realizedPnL: 85000, unrealizedPnL: 95000 },
+    { date: "Oct 18", totalValue: 1380000, realizedPnL: 88000, unrealizedPnL: 75000 },
+    { date: "Oct 22", totalValue: 1520000, realizedPnL: 95000, unrealizedPnL: 125000 },
+    { date: "Oct 25", totalValue: 1480000, realizedPnL: 92000, unrealizedPnL: 105000 },
+    { date: "Oct 29", totalValue: 1650000, realizedPnL: 105000, unrealizedPnL: 155000 },
+    { date: "Nov 1", totalValue: 1590000, realizedPnL: 108000, unrealizedPnL: 125000 },
+    { date: "Nov 5", totalValue: 1720000, realizedPnL: 125000, unrealizedPnL: 175000 },
+    { date: "Nov 8", totalValue: 1680000, realizedPnL: 132000, unrealizedPnL: 145000 },
+    { date: "Nov 12", totalValue: 1820000, realizedPnL: 158000, unrealizedPnL: 215000 },
+    { date: "Today", totalValue: 1875000, realizedPnL: 185000, unrealizedPnL: 255000 }
+  ],
+  '90D': [
+    { date: "Aug 15", totalValue: 1180000, realizedPnL: 35000, unrealizedPnL: 45000 },
+    { date: "Aug 25", totalValue: 1250000, realizedPnL: 42000, unrealizedPnL: 68000 },
+    { date: "Sep 5", totalValue: 1150000, realizedPnL: 38000, unrealizedPnL: 25000 },
+    { date: "Sep 15", totalValue: 1320000, realizedPnL: 55000, unrealizedPnL: 85000 },
+    { date: "Sep 25", totalValue: 1280000, realizedPnL: 58000, unrealizedPnL: 65000 },
+    { date: "Oct 5", totalValue: 1420000, realizedPnL: 72000, unrealizedPnL: 105000 },
+    { date: "Oct 15", totalValue: 1380000, realizedPnL: 75000, unrealizedPnL: 85000 },
+    { date: "Oct 25", totalValue: 1520000, realizedPnL: 88000, unrealizedPnL: 125000 },
+    { date: "Nov 5", totalValue: 1720000, realizedPnL: 125000, unrealizedPnL: 175000 },
+    { date: "Nov 12", totalValue: 1820000, realizedPnL: 158000, unrealizedPnL: 215000 },
+    { date: "Today", totalValue: 1875000, realizedPnL: 185000, unrealizedPnL: 255000 }
+  ],
+  '1Y': [
+    { date: "Dec 2023", totalValue: 850000, realizedPnL: 15000, unrealizedPnL: 5000 },
+    { date: "Jan 2024", totalValue: 920000, realizedPnL: 22000, unrealizedPnL: 18000 },
+    { date: "Feb", totalValue: 880000, realizedPnL: 25000, unrealizedPnL: -5000 },
+    { date: "Mar", totalValue: 1050000, realizedPnL: 35000, unrealizedPnL: 45000 },
+    { date: "Apr", totalValue: 1150000, realizedPnL: 45000, unrealizedPnL: 65000 },
+    { date: "May", totalValue: 1080000, realizedPnL: 48000, unrealizedPnL: 35000 },
+    { date: "Jun", totalValue: 1280000, realizedPnL: 62000, unrealizedPnL: 85000 },
+    { date: "Jul", totalValue: 1320000, realizedPnL: 68000, unrealizedPnL: 95000 },
+    { date: "Aug", totalValue: 1180000, realizedPnL: 65000, unrealizedPnL: 55000 },
+    { date: "Sep", totalValue: 1420000, realizedPnL: 85000, unrealizedPnL: 125000 },
+    { date: "Oct", totalValue: 1650000, realizedPnL: 125000, unrealizedPnL: 165000 },
+    { date: "Today", totalValue: 1875000, realizedPnL: 185000, unrealizedPnL: 255000 }
+  ],
+  'ALL': [
+    { date: "Jan 2023", totalValue: 450000, realizedPnL: 0, unrealizedPnL: 0 },
+    { date: "Mar 2023", totalValue: 520000, realizedPnL: 5000, unrealizedPnL: 15000 },
+    { date: "Jun 2023", totalValue: 680000, realizedPnL: 12000, unrealizedPnL: 25000 },
+    { date: "Sep 2023", totalValue: 750000, realizedPnL: 18000, unrealizedPnL: 32000 },
+    { date: "Dec 2023", totalValue: 850000, realizedPnL: 25000, unrealizedPnL: 45000 },
+    { date: "Mar 2024", totalValue: 1050000, realizedPnL: 45000, unrealizedPnL: 75000 },
+    { date: "Jun 2024", totalValue: 1280000, realizedPnL: 75000, unrealizedPnL: 105000 },
+    { date: "Sep 2024", totalValue: 1420000, realizedPnL: 105000, unrealizedPnL: 145000 },
+    { date: "Today", totalValue: 1875000, realizedPnL: 185000, unrealizedPnL: 255000 }
+  ]
+};
 
-// Extended data for longer timeframes - you can add more data points here
-export const mockExtendedPerformanceData = [
-  // 90D+ historical data
-  { date: "Sep", totalValue: 1200000, realizedPnL: 50000, unrealizedPnL: 25000 },
-  { date: "Oct", totalValue: 1350000, realizedPnL: 75000, unrealizedPnL: 45000 },
-  { date: "Nov", totalValue: 1480000, realizedPnL: 115000, unrealizedPnL: 125000 },
-  { date: "Dec 1", totalValue: 1520000, realizedPnL: 125000, unrealizedPnL: 145000 },
-  { date: "Dec 7", totalValue: 1650000, realizedPnL: 145000, unrealizedPnL: 185000 },
-  { date: "Dec 8", totalValue: 1680000, realizedPnL: 148000, unrealizedPnL: 195000 },
-  { date: "Dec 9", totalValue: 1720000, realizedPnL: 152000, unrealizedPnL: 210000 },
-  { date: "Dec 10", totalValue: 1690000, realizedPnL: 150000, unrealizedPnL: 185000 },
-  { date: "Dec 11", totalValue: 1755000, realizedPnL: 158000, unrealizedPnL: 225000 },
-  { date: "Dec 12", totalValue: 1790000, realizedPnL: 165000, unrealizedPnL: 240000 },
-  { date: "Dec 13", totalValue: 1820000, realizedPnL: 172000, unrealizedPnL: 255000 },
-  { date: "Today", totalValue: 1850000, realizedPnL: 185000, unrealizedPnL: 275000 },
-];
+// Legacy data for backward compatibility
+export const mockExtendedPerformanceData = mockPerformanceData['ALL'];
 
 export const mockActiveOrders = [
   {

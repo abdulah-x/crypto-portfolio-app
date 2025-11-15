@@ -145,14 +145,14 @@ export const useAuthState = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username: email, password }),
         signal: AbortSignal.timeout(5000), // 5 second timeout
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('vaultx_token', data.token);
+        localStorage.setItem('vaultx_token', data.access_token);
         setAuthState({
           user: data.user,
           isLoading: false,
@@ -234,7 +234,7 @@ export const useAuthState = () => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('vaultx_token', data.token);
+        localStorage.setItem('vaultx_token', data.access_token);
         setAuthState({
           user: data.user,
           isLoading: false,
@@ -405,7 +405,7 @@ export const useAuthState = () => {
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('vaultx_token', data.token);
+        localStorage.setItem('vaultx_token', data.access_token);
         setAuthState(prev => ({
           ...prev,
           user: data.user,

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { 
   DollarSign, 
   TrendingUp, 
@@ -18,6 +19,7 @@ import {
   ChevronDown
 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
+import { portfolioApi } from "@/lib/api";
 
 import MetricCard from "@/components/ui/MetricCard";
 import PortfolioOverview from "@/components/dashboard/PortfolioOverview";
@@ -29,8 +31,7 @@ import {
   generateUserMockData,
   mockAllocationData,
   mockHoldingsData,
-  mockPerformanceData,
-  mockExtendedPerformanceData
+  mockPerformanceData
 } from "@/data/mockData";
 
 export default function Dashboard() {
@@ -41,29 +42,60 @@ export default function Dashboard() {
   const { user, isLoading, logout } = useAuth();
   const userMenuRef = useRef<HTMLDivElement>(null);
 
+  // Backend data states
+  const [portfolioData, setPortfolioData] = useState<any>(null);
+  const [backendDataLoading, setBackendDataLoading] = useState(true);
+  const [backendError, setBackendError] = useState<string | null>(null);
+
   // Get filtered performance data based on timeframe
   const getPerformanceData = (timeframe: string) => {
-    const allData = mockExtendedPerformanceData;
-    
-    switch (timeframe) {
-      case '7D':
-        return allData.slice(-8); // Last 8 data points for 7 days
-      case '30D':
-        return allData.slice(-5); // Last 5 data points for 30 days
-      case '90D':
-        return allData.slice(-7); // Last 7 data points for 90 days
-      case '1Y':
-        return allData; // All available data
-      case 'ALL':
-        return allData; // All available data
-      default:
-        return allData.slice(-5); // Default to 30D
-    }
+    // Use the new structured data
+    return mockPerformanceData[timeframe as keyof typeof mockPerformanceData] || mockPerformanceData['30D'];
   };
 
   const handleTimeframeChange = (timeframe: string) => {
     setSelectedTimeframe(timeframe);
   };
+
+  // Load portfolio data from backend
+  useEffect(() => {
+    const loadPortfolioData = async () => {
+      if (!user) {
+        setBackendDataLoading(false);
+        return;
+      }
+
+      try {
+        setBackendDataLoading(true);
+        setBackendError(null);
+        
+        // Fetch portfolio data
+        const portfolioResponse = await portfolioApi.getPortfolio();
+        setPortfolioData(portfolioResponse.data);
+        
+        console.log('✅ Portfolio data loaded:', portfolioResponse.data);
+      } catch (error: any) {
+        console.warn('⚠️ Backend not available, using mock data:', error.message);
+        setBackendError(error.message || 'Failed to load portfolio data');
+        // Continue with mock data when backend is not available
+      } finally {
+        setBackendDataLoading(false);
+      }
+    };
+
+    loadPortfolioData();
+  }, [user]);
+
+  // Navigation items
+  const navigationItems = [
+    { name: "Dashboard", href: "/dashboard", icon: BarChart3, active: true },
+    { name: "Portfolio", href: "/portfolio", icon: PieChartIcon },
+    { name: "Markets Overview", href: "/markets", icon: TrendingUp },
+    { name: "Trade History", href: "/trades", icon: Activity },
+    { name: "Analytics", href: "/analytics", icon: Target },
+    { name: "Risk & Exposure", href: "/risk", icon: DollarSign },
+    { name: "Settings", href: "/settings", icon: Settings },
+  ];
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -135,6 +167,23 @@ export default function Dashboard() {
         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
       </div>
 
+      {/* Backend Status Banner */}
+      {backendError && (
+        <div className="relative z-20 bg-yellow-900/20 border-b border-yellow-700/30 px-6 py-3">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+              <p className="text-yellow-300 text-sm">
+                Backend service unavailable - Displaying mock data for demonstration
+              </p>
+            </div>
+            <div className="text-xs text-yellow-400">
+              Start backend: <code className="bg-yellow-900/30 px-2 py-1 rounded">cd backend && python main.py</code>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="relative z-10 bg-gray-900/80 backdrop-blur-xl border-b border-gray-800">
         <div className="px-6 py-4">
@@ -161,7 +210,20 @@ export default function Dashboard() {
                 {/* User Info */}
                 <div className="hidden sm:block">
                   <h1 className="text-xl font-bold text-white">{getDisplayName()}</h1>
-                  <p className="text-xs text-gray-400">Portfolio Dashboard</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-gray-400">Portfolio Dashboard</p>
+                    {backendError ? (
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                        <span className="text-xs text-yellow-400">Mock Data</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-xs text-green-400">Live Data</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -271,26 +333,20 @@ export default function Dashboard() {
         `}>
           <div className="p-6">
             <nav className="space-y-2">
-              {[
-                { name: "Dashboard", icon: BarChart3, active: true },
-                { name: "Portfolio", icon: PieChartIcon },
-                { name: "Markets Overview", icon: TrendingUp },
-                { name: "Trade History", icon: Activity },
-                { name: "Analytics", icon: BarChart3 },
-                { name: "Risk & Exposure", icon: PieChartIcon },
-                { name: "Settings", icon: Settings }
-              ].map((item) => (
-                <button
+              {navigationItems.map((item) => (
+                <Link
                   key={item.name}
+                  href={item.href}
                   className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${
                     item.active
                       ? "bg-cyan-600 text-white"
                       : "text-gray-400 hover:text-white hover:bg-gray-800"
                   }`}
+                  onClick={() => setSidebarOpen(false)} // Close mobile sidebar on navigation
                 >
                   <item.icon className="w-5 h-5" />
                   <span className="font-medium">{item.name}</span>
-                </button>
+                </Link>
               ))}
             </nav>
           </div>
