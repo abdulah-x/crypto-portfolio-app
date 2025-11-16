@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/providers/AuthProvider";
+import AppLayout from "@/components/layout/AppLayout";
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
@@ -10,50 +11,62 @@ export default function SettingsPage() {
     darkMode: true,
     autoSync: false,
   });
+  
+  const [profileData, setProfileData] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+  });
+
+  const handleProfileChange = (field: string, value: string) => {
+    setProfileData(prev => ({ ...prev, [field]: value }));
+  };
 
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
-          <p className="text-gray-400">Manage your account settings and preferences</p>
-        </div>
+    <AppLayout>
+      <div className="p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
+            <p className="text-gray-400">Manage your account settings and preferences</p>
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Profile */}
-          <div className="lg:col-span-2">
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 mb-6">
-              <h2 className="text-xl font-bold text-white mb-4">Profile Information</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
-                  <input
-                    type="email"
-                    value={user?.email || ''}
-                    disabled
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Profile */}
+            <div className="lg:col-span-2">
+              <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 mb-6">
+                <h2 className="text-xl font-bold text-white mb-4">Profile Information</h2>
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">First Name</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
                     <input
-                      type="text"
-                      value={user?.firstName || ''}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                      type="email"
+                      value={user?.email || ''}
+                      readOnly
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white opacity-75 cursor-not-allowed"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Last Name</label>
-                    <input
-                      type="text"
-                      value={user?.lastName || ''}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">First Name</label>
+                      <input
+                        type="text"
+                        value={profileData.firstName}
+                        onChange={(e) => handleProfileChange('firstName', e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Last Name</label>
+                      <input
+                        type="text"
+                        value={profileData.lastName}
+                        onChange={(e) => handleProfileChange('lastName', e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
             {/* Preferences */}
             <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
@@ -115,6 +128,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }

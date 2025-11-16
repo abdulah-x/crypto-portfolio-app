@@ -3,31 +3,88 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/providers/AuthProvider";
 import { tradesApi } from "@/lib/api";
+import AppLayout from "@/components/layout/AppLayout";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
-// Mock trades data generator
+// Enhanced mock trades data generator with realistic trading scenarios
 const generateMockTrades = () => {
   const mockTrades = [];
-  const cryptos = ['BTC', 'ETH', 'ADA', 'SOL', 'DOT', 'MATIC', 'LINK', 'UNI'];
-  const sides = ['buy', 'sell'];
+  const cryptos = [
+    { symbol: 'BTC', name: 'Bitcoin', basePrice: 67500 },
+    { symbol: 'ETH', name: 'Ethereum', basePrice: 3800 },
+    { symbol: 'ADA', name: 'Cardano', basePrice: 0.65 },
+    { symbol: 'SOL', name: 'Solana', basePrice: 185 },
+    { symbol: 'DOT', name: 'Polkadot', basePrice: 8.5 },
+    { symbol: 'MATIC', name: 'Polygon', basePrice: 1.2 },
+    { symbol: 'LINK', name: 'Chainlink', basePrice: 18.5 },
+    { symbol: 'UNI', name: 'Uniswap', basePrice: 12.8 },
+    { symbol: 'AVAX', name: 'Avalanche', basePrice: 42.3 },
+    { symbol: 'ATOM', name: 'Cosmos', basePrice: 9.7 },
+    { symbol: 'XRP', name: 'Ripple', basePrice: 0.58 },
+    { symbol: 'LTC', name: 'Litecoin', basePrice: 95.2 }
+  ];
   
-  for (let i = 0; i < 10; i++) {
-    const symbol = cryptos[Math.floor(Math.random() * cryptos.length)];
+  const sides = ['buy', 'sell'];
+  const tradingStrategies = [
+    { type: 'scalping', minQty: 0.01, maxQty: 0.5, priceVariation: 0.02 },
+    { type: 'swing', minQty: 0.1, maxQty: 2.0, priceVariation: 0.08 },
+    { type: 'position', minQty: 0.5, maxQty: 5.0, priceVariation: 0.15 },
+    { type: 'dca', minQty: 0.05, maxQty: 1.0, priceVariation: 0.05 }
+  ];
+
+  // Generate 25 trades with diverse scenarios
+  for (let i = 0; i < 25; i++) {
+    const crypto = cryptos[Math.floor(Math.random() * cryptos.length)];
     const side = sides[Math.floor(Math.random() * sides.length)];
-    const quantity = parseFloat((Math.random() * 10).toFixed(4));
-    const price = parseFloat((Math.random() * 50000 + 1000).toFixed(2));
+    const strategy = tradingStrategies[Math.floor(Math.random() * tradingStrategies.length)];
+    
+    // Generate realistic quantities based on crypto type and strategy
+    const quantityMultiplier = crypto.basePrice > 1000 ? 0.1 : crypto.basePrice > 100 ? 1 : 100;
+    const quantity = parseFloat((
+      (Math.random() * (strategy.maxQty - strategy.minQty) + strategy.minQty) * quantityMultiplier
+    ).toFixed(6));
+    
+    // Generate price with realistic market variations
+    const priceVariation = (Math.random() - 0.5) * strategy.priceVariation;
+    const price = parseFloat((crypto.basePrice * (1 + priceVariation)).toFixed(crypto.basePrice > 1 ? 2 : 6));
+    
     const total = quantity * price;
-    const realized_pnl_usd = (Math.random() - 0.5) * 1000; // Random P&L
+    
+    // Generate realistic P&L based on trade type and market conditions
+    const pnlFactor = side === 'sell' ? 
+      (Math.random() > 0.65 ? 1 : -1) * (Math.random() * 0.15 + 0.02) : // Sells more likely to be profitable
+      (Math.random() > 0.4 ? -1 : 1) * (Math.random() * 0.1 + 0.01);   // Buys show unrealized potential
+    
+    const realized_pnl_usd = parseFloat((total * pnlFactor).toFixed(2));
+    
+    // Generate realistic timestamps over the last 45 days with trading patterns
+    const daysAgo = Math.floor(Math.random() * 45);
+    const hour = Math.floor(Math.random() * 24);
+    // More trading during market hours (UTC)
+    const adjustedHour = hour < 6 || hour > 22 ? 
+      8 + Math.floor(Math.random() * 12) : hour;
+    
+    const tradeDate = new Date();
+    tradeDate.setDate(tradeDate.getDate() - daysAgo);
+    tradeDate.setHours(adjustedHour, Math.floor(Math.random() * 60), Math.floor(Math.random() * 60));
+    
+    // Occasional failed/pending trades for realism
+    const status = Math.random() > 0.95 ? 'failed' : 
+                  Math.random() > 0.97 ? 'pending' : 'completed';
     
     mockTrades.push({
       id: i + 1,
-      symbol,
+      symbol: crypto.symbol,
+      name: crypto.name,
       side,
       quantity,
       price,
       total,
-      realized_pnl_usd: parseFloat(realized_pnl_usd.toFixed(2)),
-      executed_at: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-      status: 'completed'
+      realized_pnl_usd: status === 'completed' ? realized_pnl_usd : 0,
+      executed_at: tradeDate.toISOString(),
+      status,
+      strategy: strategy.type,
+      fee_usd: parseFloat((total * 0.001).toFixed(2)) // 0.1% trading fee
     });
   }
   
@@ -68,46 +125,52 @@ export default function TradesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading trade history...</p>
-        </div>
-      </div>
+      <ProtectedRoute>
+        <AppLayout>
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+              <p className="text-gray-400">Loading trade history...</p>
+            </div>
+          </div>
+        </AppLayout>
+      </ProtectedRoute>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 text-xl mb-4">⚠️ Error</div>
-          <p className="text-gray-400 mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
+      <ProtectedRoute>
+        <AppLayout>
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-red-500 text-xl mb-4">⚠️ Error</div>
+              <p className="text-gray-400 mb-4">{error}</p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </AppLayout>
+      </ProtectedRoute>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Status Banner */}
-        {error && (
-          <div className="mb-4 bg-yellow-900/20 border border-yellow-700/30 rounded-lg p-4">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-              <p className="text-yellow-300 text-sm">
-                {error} - Showing demonstration data
+    <ProtectedRoute>
+      <AppLayout>
+        <div className="p-6 space-y-6">
+          <div className="max-w-7xl mx-auto space-y-6">
+            {/* Header */}
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-white mb-2">Trade History</h1>
+              <p className="text-gray-400">
+                Complete overview of your trading activity and performance
               </p>
             </div>
-          </div>
-        )}
         
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Trade History</h1>
@@ -198,7 +261,9 @@ export default function TradesPage() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+          </div>
+        </div>
+      </AppLayout>
+    </ProtectedRoute>
   );
 }

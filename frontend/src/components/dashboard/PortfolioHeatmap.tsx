@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Treemap, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 
 interface HeatmapData {
@@ -26,27 +26,52 @@ interface PortfolioHeatmapProps {
 export default function PortfolioHeatmap({ holdings, totalValue }: PortfolioHeatmapProps) {
   const [hoveredAsset, setHoveredAsset] = useState<string | null>(null);
 
-  // Convert holdings data to heatmap format
-  const heatmapData: HeatmapData[] = holdings.map(holding => {
+  // Enhanced mock data with more coins and mixed performance
+  const enhancedHeatmapData: HeatmapData[] = useMemo(() => {
     // Determine color based on performance
     const getPerformanceColor = (change: number) => {
+      if (change > 10) return '#059669'; // dark green
       if (change > 5) return '#10b981'; // bright green
       if (change > 2) return '#22c55e'; // green
       if (change > 0) return '#84cc16'; // light green
       if (change > -2) return '#eab308'; // yellow
       if (change > -5) return '#f97316'; // orange
-      return '#ef4444'; // red
+      if (change > -10) return '#ef4444'; // red
+      return '#dc2626'; // dark red
     };
 
-    return {
+    // Add more diverse crypto data with both positive and negative changes
+    const additionalCoins = [
+      { name: 'AVAX', value: 85000, allocation: 4.2, change24h: -8.5, price: 28.50 },
+      { name: 'NEAR', value: 62000, allocation: 3.1, change24h: 12.3, price: 3.80 },
+      { name: 'ATOM', value: 48000, allocation: 2.4, change24h: -3.2, price: 9.20 },
+      { name: 'FTM', value: 35000, allocation: 1.7, change24h: 15.7, price: 0.42 },
+      { name: 'ALGO', value: 28000, allocation: 1.4, change24h: -12.1, price: 0.18 },
+      { name: 'HBAR', value: 22000, allocation: 1.1, change24h: 6.8, price: 0.08 },
+      { name: 'XLM', value: 18000, allocation: 0.9, change24h: -4.5, price: 0.12 },
+      { name: 'VET', value: 15000, allocation: 0.7, change24h: 8.2, price: 0.025 },
+      { name: 'FLOW', value: 12000, allocation: 0.6, change24h: -18.4, price: 0.85 },
+      { name: 'ICP', value: 10000, allocation: 0.5, change24h: 22.1, price: 5.60 }
+    ];
+
+    // Convert original holdings
+    const originalData = holdings.map(holding => ({
       name: holding.symbol,
       value: holding.marketValue,
       allocation: holding.allocation,
       change24h: holding.change24h,
       price: holding.lastPrice,
       color: getPerformanceColor(holding.change24h)
-    };
-  });
+    }));
+
+    // Add additional coins with performance colors
+    const additionalData = additionalCoins.map(coin => ({
+      ...coin,
+      color: getPerformanceColor(coin.change24h)
+    }));
+
+    return [...originalData, ...additionalData].sort((a, b) => b.value - a.value);
+  }, [holdings]);
 
   // Custom content renderer for treemap cells
   const CustomizedContent = (props: any) => {
@@ -176,7 +201,7 @@ export default function PortfolioHeatmap({ holdings, totalValue }: PortfolioHeat
       <div className="w-full h-80">
         <ResponsiveContainer width="100%" height="100%">
           <Treemap
-            data={heatmapData}
+            data={enhancedHeatmapData}
             dataKey="value"
             aspectRatio={4/3}
             stroke="none"
@@ -190,10 +215,10 @@ export default function PortfolioHeatmap({ holdings, totalValue }: PortfolioHeat
       {/* Performance Summary */}
       <div className="mt-4 flex justify-between items-center text-sm">
         <div className="text-gray-400">
-          {heatmapData.filter(d => d.change24h > 0).length} assets up • {heatmapData.filter(d => d.change24h <= 0).length} assets down
+          {enhancedHeatmapData.filter((d: HeatmapData) => d.change24h > 0).length} assets up • {enhancedHeatmapData.filter((d: HeatmapData) => d.change24h <= 0).length} assets down
         </div>
         <div className="text-gray-300">
-          Largest holding: {heatmapData[0]?.name} ({heatmapData[0]?.allocation.toFixed(1)}%)
+          Largest holding: {enhancedHeatmapData[0]?.name} ({enhancedHeatmapData[0]?.allocation.toFixed(1)}%)
         </div>
       </div>
     </div>
