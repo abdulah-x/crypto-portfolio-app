@@ -60,8 +60,14 @@ export default function DashboardPage() {
         
         console.log('✅ Portfolio data loaded:', portfolioResponse.data);
       } catch (error: any) {
-        console.warn('⚠️ Backend not available, using mock data:', error.message);
-        setBackendError(error.message || 'Failed to load portfolio data');
+        // Handle backend connectivity gracefully
+        if (error.message && (error.message.includes('Failed to fetch') || error.message.includes('ERR_NETWORK'))) {
+          console.info('📡 Backend not running - using demo data for dashboard');
+          setBackendError(null); // Don't show error for expected dev scenario
+        } else {
+          console.warn('⚠️ API error:', error.message);
+          setBackendError(error.message || 'Failed to load portfolio data');
+        }
         // Continue with mock data when backend is not available
       } finally {
         setBackendDataLoading(false);

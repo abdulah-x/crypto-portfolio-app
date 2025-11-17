@@ -23,7 +23,12 @@ export default function AnalyticsPage() {
         const data = await pnlApi.getPnLSummary();
         setAnalyticsData(data);
       } catch (err: any) {
-        console.warn('⚠️ Backend not available, using mock analytics data:', err.message);
+        // Handle backend connectivity gracefully
+        if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('ERR_NETWORK'))) {
+          console.info('📡 Backend not running - using demo data for analytics');
+        } else {
+          console.warn('⚠️ API error:', err.message);
+        }
         // Continue to show mock data
       } finally {
         setLoading(false);

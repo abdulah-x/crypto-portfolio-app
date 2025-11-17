@@ -15,7 +15,10 @@ export default function MarketsPage() {
       { symbol: 'ETH', name: 'Ethereum', price: 3200, change24h: -1.2 },
       { symbol: 'ADA', name: 'Cardano', price: 0.65, change24h: 4.8 },
       { symbol: 'SOL', name: 'Solana', price: 185, change24h: 7.2 },
-      { symbol: 'DOT', name: 'Polkadot', price: 8.5, change24h: -2.1 }
+      { symbol: 'DOT', name: 'Polkadot', price: 8.5, change24h: -2.1 },
+      { symbol: 'AVAX', name: 'Avalanche', price: 42.3, change24h: 3.8 },
+      { symbol: 'MATIC', name: 'Polygon', price: 1.2, change24h: -0.9 },
+      { symbol: 'LINK', name: 'Chainlink', price: 18.5, change24h: 5.2 }
     ];
     
     setTimeout(() => {
@@ -49,40 +52,6 @@ export default function MarketsPage() {
               <p className="text-gray-400">Real-time cryptocurrency market data</p>
             </div>
 
-        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-800/80">
-                <tr>
-                  <th className="px-6 py-4 text-left text-gray-300 font-medium">Asset</th>
-                  <th className="px-6 py-4 text-right text-gray-300 font-medium">Price</th>
-                  <th className="px-6 py-4 text-right text-gray-300 font-medium">24h Change</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700">
-                {marketData.map((asset) => (
-                  <tr key={asset.symbol} className="hover:bg-gray-800/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-white font-medium">{asset.name}</div>
-                        <div className="text-gray-400 text-sm">{asset.symbol}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right text-white font-medium">
-                      ${asset.price.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <span className={`font-medium ${
-                        asset.change24h >= 0 ? 'text-green-400' : 'text-red-400'
-                      }`}>
-                        {asset.change24h >= 0 ? '+' : ''}{asset.change24h}%
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
             <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">

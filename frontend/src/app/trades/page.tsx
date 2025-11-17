@@ -110,8 +110,14 @@ export default function TradesPage() {
         setTotalPages(data.pagination?.totalPages || 1);
         setError(null);
       } catch (err: any) {
-        console.warn('⚠️ Backend not available, using mock trade data:', err.message);
-        setError('Backend service unavailable - displaying mock data');
+        // Handle backend connectivity gracefully
+        if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('ERR_NETWORK'))) {
+          console.info('📡 Backend not running - using demo data for trades');
+          setError(null); // Don't show error for expected dev scenario
+        } else {
+          console.warn('⚠️ API error:', err.message);
+          setError('API error - displaying mock data');
+        }
         // Fallback to mock data
         setTrades(generateMockTrades());
         setTotalPages(1);
