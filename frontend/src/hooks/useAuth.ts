@@ -1,16 +1,21 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { AUTH_CONFIG } from '@/lib/auth-config';
+import React, { useState, useEffect, createContext, useContext } from 'react';
+import { api } from '@/lib/api';
 
 export interface User {
-  id: string;
+  id: number;
+  username: string;
   email: string;
   firstName?: string;
   lastName?: string;
-  avatar?: string;
-  provider: 'email' | 'google' | 'apple' | 'github';
-  isEmailVerified: boolean;
+  timezone?: string;
+  preferredCurrency?: string;
+  isActive: boolean;
+  isVerified: boolean;
   createdAt: string;
+  updatedAt: string;
+  lastLogin?: string;
   hasCompletedOnboarding?: boolean;
+  avatar?: string;
 }
 
 export interface AuthState {
@@ -23,9 +28,6 @@ export interface AuthState {
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, firstName: string, lastName: string, username: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
-  loginWithApple: () => Promise<void>;
-  loginWithGitHub: () => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
   refreshToken: () => Promise<void>;
@@ -66,18 +68,11 @@ export const useAuthState = () => {
       }
 
       // Try to validate token with backend
-      const response = await fetch(`${AUTH_CONFIG.API_BASE_URL}/api/auth/validate`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        signal: AbortSignal.timeout(5000), // 5 second timeout
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
+      const response = await api.validateToken();
+      
+      if (response.success && response.data) {
         setAuthState({
-          user: userData.user,
+          user: response.data.user,
           isLoading: false,
           isAuthenticated: true,
           error: null,
@@ -98,18 +93,23 @@ export const useAuthState = () => {
       // If backend is not available, check if we have a mock token for development
       const token = localStorage.getItem('vaultx_token');
       if (token && token.startsWith('mock-jwt-token')) {
-        // This is a mock token from development mode, restore mock user
+        // Mock user for development
         const hasCompletedOnboarding = localStorage.getItem('hasCompletedOnboarding') === 'true';
         const mockUser = {
-          id: 'mock-user-restored',
+          id: 1,
+          username: 'demouser',
           email: 'demo@vaultx.com',
           firstName: 'Demo',
           lastName: 'User',
-          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face&auto=format&q=80',
-          provider: 'email' as const,
-          isEmailVerified: true,
+          timezone: 'UTC',
+          preferredCurrency: 'USD',
+          isActive: true,
+          isVerified: true,
           createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
           hasCompletedOnboarding: hasCompletedOnboarding,
+          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face&auto=format&q=80',
         };
         
         setAuthState({
@@ -140,21 +140,12 @@ export const useAuthState = () => {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
 
       // Try to connect to the backend API
-      const response = await fetch(`${AUTH_CONFIG.API_BASE_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username: email, password }),
-        signal: AbortSignal.timeout(5000), // 5 second timeout
-      });
+      const response = await api.login({ email, password });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem('vaultx_token', data.access_token);
+      if (response.success && response.data) {
+        localStorage.setItem('vaultx_token', response.data.access_token);
         setAuthState({
-          user: data.user,
+          user: response.data.user,
           isLoading: false,
           isAuthenticated: true,
           error: null,
@@ -163,50 +154,79 @@ export const useAuthState = () => {
         setAuthState(prev => ({
           ...prev,
           isLoading: false,
-          error: data.message || 'Login failed',
+          error: 'Login failed. Please check your credentials.',
         }));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.warn('Backend API not available, using mock authentication for development');
       
-      // Mock authentication for development when backend is not available
-      if (email && password) {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Create mock user data - check if user has completed onboarding before
-        const hasCompletedOnboarding = localStorage.getItem('hasCompletedOnboarding') === 'true';
-        const isReturningUser = localStorage.getItem(`user_${email}_returning`) === 'true';
-        
-        const mockUser = {
-          id: `mock-user-${email.replace('@', '-').replace('.', '-')}`,
-          email: email,
-          firstName: 'Demo',
-          lastName: 'User',
-          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face&auto=format&q=80',
-          provider: 'email' as const,
-          isEmailVerified: true,
-          createdAt: new Date().toISOString(),
-          hasCompletedOnboarding: hasCompletedOnboarding && isReturningUser,
-        };
-        
-        // Create mock token
-        const mockToken = 'mock-jwt-token-for-development';
-        localStorage.setItem('vaultx_token', mockToken);
-        
-        setAuthState({
-          user: mockUser,
-          isLoading: false,
-          isAuthenticated: true,
-          error: null,
-        });
-        
-        console.info('✅ Mock login successful for development');
+      // If backend is not available, provide mock authentication for development
+      if (error.message && error.message.includes('Backend service is not available')) {
+        // Mock authentication for development when backend is not available
+        if (email && password) {
+          // Simulate API delay
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Create mock user data
+          const hasCompletedOnboarding = localStorage.getItem('hasCompletedOnboarding') === 'true';
+          const isReturningUser = localStorage.getItem(`user_${email}_returning`) === 'true';
+          
+          const mockUser = {
+            id: parseInt(`${email.replace('@', '').replace('.', '').slice(0, 8)}`) || 1,
+            username: email.split('@')[0],
+            email: email,
+            firstName: 'Demo',
+            lastName: 'User',
+            timezone: 'UTC',
+            preferredCurrency: 'USD',
+            isActive: true,
+            isVerified: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString(),
+            hasCompletedOnboarding: hasCompletedOnboarding && isReturningUser,
+            avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face&auto=format&q=80',
+          };
+          
+          // Create mock token
+          const mockToken = 'mock-jwt-token-for-development';
+          localStorage.setItem('vaultx_token', mockToken);
+          
+          setAuthState({
+            user: mockUser,
+            isLoading: false,
+            isAuthenticated: true,
+            error: null,
+          });
+          
+          console.info('✅ Mock login successful for development');
+        } else {
+          setAuthState(prev => ({
+            ...prev,
+            isLoading: false,
+            error: 'Please provide both email and password',
+          }));
+        }
       } else {
+        // Real error from backend
+        let errorMessage = 'Login failed. Please try again.';
+        
+        if (error.message) {
+          if (error.message.includes('Authentication required')) {
+            errorMessage = 'Invalid email or password';
+          } else if (error.message.includes('Validation error')) {
+            errorMessage = error.message;
+          } else if (error.message.includes('Server error')) {
+            errorMessage = 'Server error. Please try again later.';
+          } else {
+            errorMessage = error.message;
+          }
+        }
+        
         setAuthState(prev => ({
           ...prev,
           isLoading: false,
-          error: 'Please enter valid credentials',
+          error: errorMessage,
         }));
       }
     }
@@ -216,27 +236,18 @@ export const useAuthState = () => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
 
-      const response = await fetch(`${AUTH_CONFIG.API_BASE_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          email, 
-          password, 
-          first_name: firstName, 
-          last_name: lastName,
-          username 
-        }),
-        signal: AbortSignal.timeout(5000), // 5 second timeout
+      const response = await api.signup({ 
+        email, 
+        password, 
+        username,
+        first_name: firstName, 
+        last_name: lastName,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem('vaultx_token', data.access_token);
+      if (response.success && response.data) {
+        localStorage.setItem('vaultx_token', response.data.access_token);
         setAuthState({
-          user: data.user,
+          user: response.data.user,
           isLoading: false,
           isAuthenticated: true,
           error: null,
@@ -245,97 +256,75 @@ export const useAuthState = () => {
         setAuthState(prev => ({
           ...prev,
           isLoading: false,
-          error: data.message || 'Signup failed',
+          error: 'Signup failed. Please try again.',
         }));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.warn('Backend API not available, using mock registration for development');
       
-      // Mock registration for development when backend is not available
-      if (email && password && firstName && lastName && username) {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Create mock user data - new users should NOT have completed onboarding
-        const mockUser = {
-          id: 'mock-user-' + Math.random().toString(36).substr(2, 9),
-          email: email,
-          firstName: firstName,
-          lastName: lastName,
-          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face&auto=format&q=80',
-          provider: 'email' as const,
-          isEmailVerified: false,
-          createdAt: new Date().toISOString(),
-          hasCompletedOnboarding: false, // New users always need onboarding
-        };
-        
-        // Create mock token
-        const mockToken = 'mock-jwt-token-for-development-' + Date.now();
-        localStorage.setItem('vaultx_token', mockToken);
-        
-        setAuthState({
-          user: mockUser,
-          isLoading: false,
-          isAuthenticated: true,
-          error: null,
-        });
-        
-        console.info('✅ Mock registration successful for development');
+      // If backend is not available, provide mock registration for development
+      if (error.message && error.message.includes('Backend service is not available')) {
+        // Mock registration for development when backend is not available
+        if (email && password && firstName && lastName && username) {
+          // Simulate API delay
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          // Create mock user data - new users should NOT have completed onboarding
+          const mockUser = {
+            id: parseInt(Math.random().toString().slice(2, 10)) || 1,
+            username: username,
+            email: email,
+            firstName: firstName,
+            lastName: lastName,
+            timezone: 'UTC',
+            preferredCurrency: 'USD',
+            isActive: true,
+            isVerified: false, // New users need email verification
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            hasCompletedOnboarding: false, // New users always need onboarding
+            avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face&auto=format&q=80',
+          };
+          
+          // Create mock token
+          const mockToken = 'mock-jwt-token-for-development-' + Date.now();
+          localStorage.setItem('vaultx_token', mockToken);
+          
+          setAuthState({
+            user: mockUser,
+            isLoading: false,
+            isAuthenticated: true,
+            error: null,
+          });
+          
+          console.info('✅ Mock registration successful for development');
+        } else {
+          setAuthState(prev => ({
+            ...prev,
+            isLoading: false,
+            error: 'Please fill in all required fields',
+          }));
+        }
       } else {
+        // Real error from backend
+        let errorMessage = 'Signup failed. Please try again.';
+        
+        if (error.message) {
+          if (error.message.includes('Validation error')) {
+            errorMessage = error.message;
+          } else if (error.message.includes('Server error')) {
+            errorMessage = 'Server error. Please try again later.';
+          } else {
+            errorMessage = error.message;
+          }
+        }
+        
         setAuthState(prev => ({
           ...prev,
           isLoading: false,
-          error: 'Please fill in all required fields',
+          error: errorMessage,
         }));
       }
-    }
-  };
-
-  const loginWithGoogle = async () => {
-    try {
-      setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
-      
-      // Redirect to backend Google OAuth endpoint
-      window.location.href = '/api/auth/google';
-    } catch (error) {
-      console.error('Google login error:', error);
-      setAuthState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: 'Failed to initiate Google login',
-      }));
-    }
-  };
-
-  const loginWithApple = async () => {
-    try {
-      setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
-      
-      // Redirect to backend Apple OAuth endpoint
-      window.location.href = '/api/auth/apple';
-    } catch (error) {
-      console.error('Apple login error:', error);
-      setAuthState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: 'Failed to initiate Apple login',
-      }));
-    }
-  };
-
-  const loginWithGitHub = async () => {
-    try {
-      setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
-      
-      // Redirect to backend GitHub OAuth endpoint
-      window.location.href = '/api/auth/github';
-    } catch (error) {
-      console.error('GitHub login error:', error);
-      setAuthState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: 'Failed to initiate GitHub login',
-      }));
     }
   };
 
@@ -343,25 +332,17 @@ export const useAuthState = () => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
 
-      const token = localStorage.getItem('vaultx_token');
-      if (token) {
-        await fetch(`${AUTH_CONFIG.API_BASE_URL}/api/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+      // Try to notify backend about logout
+      try {
+        await api.logout();
+      } catch (error) {
+        // Don't fail logout if backend is unavailable
+        console.warn('Backend logout failed, proceeding with client-side logout');
       }
 
+      // Always clear local storage and state
       localStorage.removeItem('vaultx_token');
       localStorage.removeItem('hasCompletedOnboarding');
-      // Clear returning user flags for testing fresh user experience
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('user_') && key.endsWith('_returning')) {
-          localStorage.removeItem(key);
-        }
-      });
       
       setAuthState({
         user: null,
@@ -369,17 +350,13 @@ export const useAuthState = () => {
         isAuthenticated: false,
         error: null,
       });
+      
+      console.info('✅ Logout successful');
     } catch (error) {
       console.error('Logout error:', error);
-      // Still clear local state even if backend call fails
+      // Even if logout fails, clear local state
       localStorage.removeItem('vaultx_token');
       localStorage.removeItem('hasCompletedOnboarding');
-      // Clear returning user flags for testing fresh user experience
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('user_') && key.endsWith('_returning')) {
-          localStorage.removeItem(key);
-        }
-      });
       
       setAuthState({
         user: null,
@@ -392,27 +369,61 @@ export const useAuthState = () => {
 
   const refreshToken = async () => {
     try {
-      const token = localStorage.getItem('vaultx_token');
-      if (!token) return;
-
-      const response = await fetch('/api/auth/refresh', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('vaultx_token', data.access_token);
+      const response = await api.refreshToken();
+      
+      if (response.success && response.data) {
+        localStorage.setItem('vaultx_token', response.data.access_token);
+        
         setAuthState(prev => ({
           ...prev,
-          user: data.user,
+          user: response.data?.user || null,
+          error: null,
         }));
+      } else {
+        throw new Error('Token refresh failed');
       }
-    } catch (error) {
-      console.error('Token refresh error:', error);
+    } catch (error: any) {
+      console.warn('Token refresh failed:', error.message);
+      // On refresh failure, logout user
+      await logout();
+    }
+  };
+
+  const updateUserProfile = async (updates: Partial<User>) => {
+    try {
+      const response = await api.updateUserProfile(updates);
+      
+      if (response.success && response.data) {
+        setAuthState(prev => ({
+          ...prev,
+          user: response.data || null,
+        }));
+      } else {
+        // For mock/offline mode, update locally
+        setAuthState(prev => ({
+          ...prev,
+          user: prev.user ? { ...prev.user, ...updates } : null,
+        }));
+        
+        // If completing onboarding, mark user as returning user for future logins
+        if (updates.hasCompletedOnboarding && authState.user?.email) {
+          localStorage.setItem(`user_${authState.user.email}_returning`, 'true');
+          localStorage.setItem('hasCompletedOnboarding', 'true');
+        }
+      }
+    } catch (error: any) {
+      console.warn('Profile update via API failed, updating locally:', error.message);
+      // Fallback to local update
+      setAuthState(prev => ({
+        ...prev,
+        user: prev.user ? { ...prev.user, ...updates } : null,
+      }));
+      
+      // If completing onboarding, mark user as returning user for future logins
+      if (updates.hasCompletedOnboarding && authState.user?.email) {
+        localStorage.setItem(`user_${authState.user.email}_returning`, 'true');
+        localStorage.setItem('hasCompletedOnboarding', 'true');
+      }
     }
   };
 
@@ -420,39 +431,10 @@ export const useAuthState = () => {
     setAuthState(prev => ({ ...prev, error: null }));
   };
 
-  const updateUserProfile = async (updates: Partial<User>): Promise<void> => {
-    try {
-      setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
-
-      // For mock implementation, just update local state
-      // In real app, this would call the API
-      setAuthState(prev => ({
-        ...prev,
-        user: prev.user ? { ...prev.user, ...updates } : null,
-        isLoading: false
-      }));
-
-      // If completing onboarding, mark user as returning user for future logins
-      if (updates.hasCompletedOnboarding && authState.user?.email) {
-        localStorage.setItem(`user_${authState.user.email}_returning`, 'true');
-      }
-    } catch (error) {
-      console.error('Profile update error:', error);
-      setAuthState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: 'Failed to update profile'
-      }));
-    }
-  };
-
   return {
     ...authState,
     login,
     signup,
-    loginWithGoogle,
-    loginWithApple,
-    loginWithGitHub,
     logout,
     clearError,
     refreshToken,

@@ -16,6 +16,28 @@ export interface User {
   avatar?: string;
 }
 
+// Authentication Types
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface SignupRequest {
+  username: string;
+  email: string;
+  password: string;
+  first_name?: string;
+  last_name?: string;
+  timezone?: string;
+  preferred_currency?: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  user: User;
+}
+
 // Portfolio and Trading Types (matches backend models)
 export interface Holding {
   id: number;
@@ -129,27 +151,6 @@ export interface PortfolioHistory {
   totalValue: number;
   totalPnl: number;
   totalPnlPercentage: number;
-}
-
-// Authentication Types
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface SignupRequest {
-  email: string;
-  password: string;
-  username: string;
-  firstName?: string;
-  lastName?: string;
-}
-
-export interface AuthResponse {
-  user: User;
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
 }
 
 // Settings Types

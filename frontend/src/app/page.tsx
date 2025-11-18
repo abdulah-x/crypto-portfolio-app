@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
 
 export default function HomePage() {
-  const { loginWithGoogle, loginWithApple, loginWithGitHub, login, signup, isLoading, error, isAuthenticated } = useAuth();
+  const { login, signup, isLoading, error, isAuthenticated } = useAuth();
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true); // Start with login view
   const [showPassword, setShowPassword] = useState(false);
@@ -346,7 +346,7 @@ export default function HomePage() {
               {/* Social Login */}
               <div className="space-y-3 mb-6">
                 <button 
-                  onClick={() => loginWithGoogle()}
+                  onClick={() => alert('Google login coming soon!')}
                   disabled={isLoading}
                   className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white hover:bg-gray-50 rounded-xl transition-all duration-300 border border-gray-200 hover:border-gray-300 text-gray-700 hover:text-gray-900 disabled:opacity-50 transform hover:-translate-y-1 shadow-lg hover:shadow-xl"
                 >
@@ -360,7 +360,7 @@ export default function HomePage() {
                 </button>
 
                 <button 
-                  onClick={() => loginWithApple()}
+                  onClick={() => alert('Apple login coming soon!')}
                   disabled={isLoading}
                   className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-black hover:bg-gray-900 rounded-xl transition-all duration-300 border border-gray-800 hover:border-gray-700 text-white disabled:opacity-50 transform hover:-translate-y-1 shadow-lg hover:shadow-xl"
                 >
@@ -371,7 +371,7 @@ export default function HomePage() {
                 </button>
 
                 <button 
-                  onClick={() => loginWithGitHub()}
+                  onClick={() => alert('GitHub login coming soon!')}
                   disabled={isLoading}
                   className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl transition-all duration-300 border border-slate-600 hover:border-slate-500 text-white disabled:opacity-50 transform hover:-translate-y-1 shadow-lg hover:shadow-xl"
                 >

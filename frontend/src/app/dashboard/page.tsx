@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/providers/AuthProvider";
-import { portfolioApi } from "@/lib/api";
+import { api } from "@/lib/api";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AppLayout from "@/components/layout/AppLayout";
 import MetricCard from "@/components/ui/MetricCard";
@@ -32,6 +32,7 @@ export default function DashboardPage() {
   const [portfolioData, setPortfolioData] = useState<any>(null);
   const [backendDataLoading, setBackendDataLoading] = useState(true);
   const [backendError, setBackendError] = useState<string | null>(null);
+  const [binanceData, setBinanceData] = useState<any>(null);
 
   // Get filtered performance data based on timeframe
   const getPerformanceData = (timeframe: string) => {
@@ -44,7 +45,7 @@ export default function DashboardPage() {
 
   // Load portfolio data from backend
   useEffect(() => {
-    const loadPortfolioData = async () => {
+    const loadDashboardData = async () => {
       if (!user) {
         setBackendDataLoading(false);
         return;
@@ -55,13 +56,30 @@ export default function DashboardPage() {
         setBackendError(null);
         
         // Fetch portfolio data
-        const portfolioResponse = await portfolioApi.getPortfolio();
-        setPortfolioData(portfolioResponse.data);
+        const [portfolioResponse, holdingsResponse] = await Promise.allSettled([
+          api.getPortfolioSummary(),
+          api.getHoldings(),
+        ]);
         
-        console.log('✅ Portfolio data loaded:', portfolioResponse.data);
+        if (portfolioResponse.status === 'fulfilled' && portfolioResponse.value.success) {
+          setPortfolioData(portfolioResponse.value.data);
+          console.log('✅ Portfolio data loaded from backend:', portfolioResponse.value.data);
+        }
+        
+        // Try to fetch Binance data
+        try {
+          const binanceResponse = await api.getBinanceAccountInfo();
+          if (binanceResponse.success) {
+            setBinanceData(binanceResponse.data);
+            console.log('✅ Binance test data loaded:', binanceResponse.data);
+          }
+        } catch (binanceError) {
+          console.info('📊 Binance test data not available, using mock data');
+        }
+        
       } catch (error: any) {
         // Handle backend connectivity gracefully
-        if (error.message && (error.message.includes('Failed to fetch') || error.message.includes('ERR_NETWORK'))) {
+        if (error.message && error.message.includes('Backend service is not available')) {
           console.info('📡 Backend not running - using demo data for dashboard');
           setBackendError(null); // Don't show error for expected dev scenario
         } else {
@@ -74,7 +92,7 @@ export default function DashboardPage() {
       }
     };
 
-    loadPortfolioData();
+    loadDashboardData();
   }, [user]);
 
   // Generate user-specific mock data
