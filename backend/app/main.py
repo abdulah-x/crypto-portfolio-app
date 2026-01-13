@@ -91,6 +91,13 @@ except ImportError as e:
     print(f"⚠️ Backup routes import failed: {e}")
     BACKUP_AVAILABLE = False
 
+try:
+    from api.google_auth import router as google_auth_router
+    GOOGLE_AUTH_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Google OAuth routes import failed: {e}")
+    GOOGLE_AUTH_AVAILABLE = False
+
 # Include API routes
 app.include_router(auth_router, prefix="/api", tags=["Authentication"])
 app.include_router(portfolio_router, prefix="/api", tags=["Portfolio"])
@@ -118,6 +125,10 @@ if ADVANCED_PNL_AVAILABLE:
 if BACKUP_AVAILABLE:
     app.include_router(backup_router, tags=["Backup & Restore"])
     print("✅ Backup & Restore routes registered")
+
+if GOOGLE_AUTH_AVAILABLE:
+    app.include_router(google_auth_router, tags=["Google OAuth"])
+    print("✅ Google OAuth routes registered")
 
 # Health check endpoint
 @app.get("/health")

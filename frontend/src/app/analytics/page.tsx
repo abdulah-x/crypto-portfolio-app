@@ -20,7 +20,7 @@ export default function AnalyticsPage() {
       
       try {
         setLoading(true);
-        const data = await pnlApi.getPnLSummary();
+        const data = await pnlApi.summary();
         setAnalyticsData(data);
       } catch (err: any) {
         // Handle backend connectivity gracefully

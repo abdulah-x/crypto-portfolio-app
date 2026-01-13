@@ -19,6 +19,10 @@ class User(Base):
     timezone = Column(String(50), default='UTC')
     preferred_currency = Column(String(10), default='USD')
     
+    # OAuth information
+    oauth_provider = Column(String(20))  # 'google', 'apple', 'github', etc.
+    oauth_id = Column(String(255))  # OAuth provider's user ID
+    
     # Account settings
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)

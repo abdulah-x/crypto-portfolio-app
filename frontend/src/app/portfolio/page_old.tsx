@@ -23,7 +23,7 @@ export default function PortfolioPage() {
       
       try {
         setLoading(true);
-        const data = await portfolioApi.getPortfolio();
+        const data = await portfolioApi.get();
         setPortfolioData(data);
         setError(null);
       } catch (err: any) {

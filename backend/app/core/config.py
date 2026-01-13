@@ -28,6 +28,14 @@ class Settings(BaseSettings):
     # Redis Configuration
     redis_url: str = "redis://localhost:6379/0"
     
+    # Email Configuration (for OTP)
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_username: Optional[str] = None
+    smtp_password: Optional[str] = None  # Use App Password for Gmail
+    smtp_from_email: Optional[str] = None
+    smtp_from_name: str = "VaultX Crypto Portfolio"
+    
     # Security Settings
     enable_api_encryption: bool = True
     allowed_ips: str = "localhost,127.0.0.1"

@@ -373,7 +373,12 @@ export const useAuthState = () => {
 
   const refreshToken = async () => {
     try {
-      const response = await api.refreshToken();
+      const refreshTokenValue = localStorage.getItem('vaultx_refresh_token');
+      if (!refreshTokenValue) {
+        throw new Error('No refresh token available');
+      }
+      
+      const response = await api.auth.refreshToken(refreshTokenValue);
       
       if (response.success && response.data) {
         localStorage.setItem('vaultx_token', response.data.access_token);

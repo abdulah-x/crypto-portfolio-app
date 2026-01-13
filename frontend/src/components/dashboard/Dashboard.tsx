@@ -70,7 +70,7 @@ export default function Dashboard() {
         setBackendError(null);
         
         // Fetch portfolio data
-        const portfolioResponse = await portfolioApi.getPortfolio();
+        const portfolioResponse = await portfolioApi.get();
         setPortfolioData(portfolioResponse.data);
         
         console.log('✅ Portfolio data loaded:', portfolioResponse.data);

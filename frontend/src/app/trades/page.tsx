@@ -105,7 +105,7 @@ export default function TradesPage() {
       
       try {
         setLoading(true);
-        const data = await tradesApi.getTrades({ page, limit: 20 });
+        const data = await tradesApi.list({ page, limit: 20 });
         setTrades(Array.isArray(data.data) ? data.data : []);
         setTotalPages(data.pagination?.totalPages || 1);
         setError(null);
