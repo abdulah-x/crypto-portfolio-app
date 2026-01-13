@@ -533,6 +533,7 @@ export default function HomePage() {
         <GoogleOAuthModal
           isOpen={showGoogleModal}
           onClose={() => setShowGoogleModal(false)}
+          context={isLogin ? 'login' : 'signup'}
           onSuccess={(token, user) => {
             // Check if user has completed onboarding
             const hasCompletedOnboarding = user.hasCompletedOnboarding || localStorage.getItem('hasCompletedOnboarding') === 'true';

@@ -109,6 +109,11 @@ keys/
 *~
 .DS_Store
 
+# Documentation Files
+*.md
+!README.md
+!TESTING_GUIDE.md
+
 # Environment-specific files
 backend/.env
 backend/.env.local

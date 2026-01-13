@@ -25,10 +25,12 @@ GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:3000/au
 # Pydantic models
 class GoogleAuthRequest(BaseModel):
     email: EmailStr
+    context: str = "signup"  # "signup" or "login"
 
 class OTPVerifyRequest(BaseModel):
     email: EmailStr
     otp: str
+    context: str = "signup"  # "signup" or "login"
 
 class GoogleAuthResponse(BaseModel):
     success: bool
@@ -47,11 +49,30 @@ async def send_google_otp(
     """
     try:
         email = request.email.lower()
+        context = request.context
+        
+        # Check if user exists
+        existing_user = db.query(User).filter(User.email == email).first()
+        
+        # Validation based on context
+        if context == "signup" and existing_user:
+            return GoogleAuthResponse(
+                success=False,
+                message="This email is already registered. Please sign in instead.",
+                data=None
+            )
+        
+        if context == "login" and not existing_user:
+            return GoogleAuthResponse(
+                success=False,
+                message="No account found with this email. Please sign up first.",
+                data=None
+            )
         
         # Generate OTP
         otp = email_service.generate_otp()
         
-        # Store OTP
+        # Store OTP with context
         email_service.store_otp(email, otp, expires_in_minutes=10)
         
         # Send OTP email
@@ -82,6 +103,7 @@ async def verify_google_otp(
     try:
         email = request.email.lower()
         otp = request.otp.strip()
+        context = request.context
         
         # Verify OTP
         is_valid, message = email_service.verify_otp(email, otp)
@@ -147,7 +169,7 @@ async def verify_google_otp(
                 username=username,
                 first_name=first_name,
                 last_name="",  # User can update later
-                password_hash=hash_password(os.urandom(32).hex()),  # Random password (OAuth users don't need it)
+                hashed_password=auth_manager.get_password_hash(os.urandom(32).hex()),  # Random password (OAuth users don't need it)
                 is_active=True,
                 is_verified=True,  # Auto-verify Google OAuth users
                 oauth_provider="google",

@@ -7,9 +7,10 @@ interface GoogleOAuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (token: string, user: any) => void;
+  context?: 'signup' | 'login'; // Whether this is signup or login flow
 }
 
-export default function GoogleOAuthModal({ isOpen, onClose, onSuccess }: GoogleOAuthModalProps) {
+export default function GoogleOAuthModal({ isOpen, onClose, onSuccess, context = 'signup' }: GoogleOAuthModalProps) {
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -28,7 +29,7 @@ export default function GoogleOAuthModal({ isOpen, onClose, onSuccess }: GoogleO
       const response = await fetch('http://localhost:8000/api/auth/google/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, context }),
       });
 
       const data = await response.json();
@@ -65,7 +66,7 @@ export default function GoogleOAuthModal({ isOpen, onClose, onSuccess }: GoogleO
       const response = await fetch('http://localhost:8000/api/auth/google/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp }),
+        body: JSON.stringify({ email, otp, context }),
       });
 
       const data = await response.json();

@@ -485,6 +485,7 @@ export default function SignupPage() {
           <GoogleOAuthModal
             isOpen={showGoogleModal}
             onClose={() => setShowGoogleModal(false)}
+            context="signup"
             onSuccess={(token, user) => {
               // New Google OAuth users always go to onboarding
               router.push('/onboarding');
