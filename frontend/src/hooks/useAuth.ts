@@ -68,11 +68,11 @@ export const useAuthState = () => {
       }
 
       // Try to validate token with backend
-      const response = await api.validateToken();
+      const userData = await api.auth.getProfile();
       
-      if (response.success && response.data) {
+      if (userData) {
         setAuthState({
-          user: response.data.user,
+          user: userData,
           isLoading: false,
           isAuthenticated: true,
           error: null,
@@ -140,12 +140,14 @@ export const useAuthState = () => {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
 
       // Try to connect to the backend API
-      const response = await api.login({ email, password });
+      const response = await api.auth.login(email, password);
 
-      if (response.success && response.data) {
-        localStorage.setItem('vaultx_token', response.data.access_token);
+      if (response && response.access_token) {
+        localStorage.setItem('vaultx_token', response.access_token);
+        // Fetch user profile after login
+        const userData = await api.auth.getProfile();
         setAuthState({
-          user: response.data.user,
+          user: userData,
           isLoading: false,
           isAuthenticated: true,
           error: null,
@@ -236,18 +238,20 @@ export const useAuthState = () => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
 
-      const response = await api.signup({ 
+      const response = await api.auth.signup({ 
         email, 
         password, 
         username,
-        first_name: firstName, 
-        last_name: lastName,
+        firstName, 
+        lastName,
       });
 
-      if (response.success && response.data) {
-        localStorage.setItem('vaultx_token', response.data.access_token);
+      if (response && response.access_token) {
+        localStorage.setItem('vaultx_token', response.access_token);
+        // Fetch user profile after signup
+        const userData = await api.auth.getProfile();
         setAuthState({
-          user: response.data.user,
+          user: userData,
           isLoading: false,
           isAuthenticated: true,
           error: null,
@@ -334,7 +338,7 @@ export const useAuthState = () => {
 
       // Try to notify backend about logout
       try {
-        await api.logout();
+        await api.auth.logout();
       } catch (error) {
         // Don't fail logout if backend is unavailable
         console.warn('Backend logout failed, proceeding with client-side logout');

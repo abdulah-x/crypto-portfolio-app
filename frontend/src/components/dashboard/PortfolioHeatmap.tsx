@@ -198,7 +198,7 @@ export default function PortfolioHeatmap({ holdings, totalValue }: PortfolioHeat
         Size = Allocation • Color = 24h Performance
       </div>
 
-      <div className="w-full h-80">
+      <div className="w-full h-80" style={{ minHeight: '320px' }}>
         <ResponsiveContainer width="100%" height="100%">
           <Treemap
             data={enhancedHeatmapData}

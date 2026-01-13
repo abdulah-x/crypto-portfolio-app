@@ -203,3 +203,13 @@ async def get_symbol_price(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get price: {str(e)}")
+
+@router.get("/binance/test", response_model=Dict[str, Any])
+async def test_binance_api(
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Test Binance API connection - frontend compatibility endpoint
+    Alias for /binance/status
+    """
+    return await get_binance_status(current_user)

@@ -84,6 +84,13 @@ except ImportError as e:
     print(f"⚠️ Advanced P&L import failed: {e}")
     ADVANCED_PNL_AVAILABLE = False
 
+try:
+    from api.backup import router as backup_router
+    BACKUP_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Backup routes import failed: {e}")
+    BACKUP_AVAILABLE = False
+
 # Include API routes
 app.include_router(auth_router, prefix="/api", tags=["Authentication"])
 app.include_router(portfolio_router, prefix="/api", tags=["Portfolio"])
@@ -107,6 +114,10 @@ if REALTIME_PRICES_AVAILABLE:
 if ADVANCED_PNL_AVAILABLE:
     app.include_router(advanced_pnl_router, prefix="/api", tags=["Advanced P&L"])
     print("✅ Advanced P&L routes registered")
+
+if BACKUP_AVAILABLE:
+    app.include_router(backup_router, tags=["Backup & Restore"])
+    print("✅ Backup & Restore routes registered")
 
 # Health check endpoint
 @app.get("/health")

@@ -131,7 +131,7 @@ export default function PerformanceChart({
       </div>
 
       {/* Chart Container */}
-      <div className="h-80 mt-4 relative">
+      <div className="h-80 mt-4 relative" style={{ minHeight: '320px' }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart 
             data={filteredData} 

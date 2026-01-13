@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.pool import StaticPool, QueuePool
 import os
 from pathlib import Path
 
@@ -9,38 +9,58 @@ from pathlib import Path
 DB_DIR = Path(__file__).parent.parent.parent / "data"
 DB_DIR.mkdir(exist_ok=True)
 
-# Database configuration
-DATABASE_URL = f"sqlite:///{DB_DIR}/crypto_portfolio.db"
+# Create backup directory
+BACKUP_DIR = Path(__file__).parent.parent.parent / "backups"
+BACKUP_DIR.mkdir(exist_ok=True)
+
+# Database configuration - support both SQLite and PostgreSQL
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_DIR}/crypto_portfolio.db")
 TEST_DATABASE_URL = f"sqlite:///{DB_DIR}/test_portfolio.db"
 
-# Create engine with SQLite optimizations
-engine = create_engine(
-    DATABASE_URL,
-    echo=False,  # Set to True for SQL query logging
-    connect_args={
-        "check_same_thread": False,  # Allow multiple threads
-        "timeout": 20,  # Connection timeout in seconds
-    },
-    poolclass=StaticPool,  # Use static pool for SQLite
-)
+# Detect database type
+IS_SQLITE = DATABASE_URL.startswith("sqlite")
+IS_POSTGRES = DATABASE_URL.startswith("postgresql")
 
-# Enable foreign key constraints for SQLite
+# Create engine with appropriate settings
+if IS_SQLITE:
+    engine = create_engine(
+        DATABASE_URL,
+        echo=False,
+        connect_args={
+            "check_same_thread": False,
+            "timeout": 20,
+        },
+        poolclass=StaticPool,
+    )
+else:
+    # PostgreSQL configuration
+    engine = create_engine(
+        DATABASE_URL,
+        echo=False,
+        pool_size=10,
+        max_overflow=20,
+        pool_pre_ping=True,
+        poolclass=QueuePool,
+    )
+
+# Enable foreign key constraints and optimizations for SQLite
 @event.listens_for(engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
     """Enable SQLite optimizations and constraints"""
-    cursor = dbapi_connection.cursor()
-    
-    # Enable foreign key constraints
-    cursor.execute("PRAGMA foreign_keys=ON")
-    
-    # Performance optimizations
-    cursor.execute("PRAGMA journal_mode=WAL")  # Write-Ahead Logging
-    cursor.execute("PRAGMA synchronous=NORMAL")  # Faster than FULL, still safe
-    cursor.execute("PRAGMA cache_size=10000")  # Increase cache size
-    cursor.execute("PRAGMA temp_store=MEMORY")  # Store temp tables in memory
-    cursor.execute("PRAGMA mmap_size=268435456")  # Use memory-mapped I/O (256MB)
-    
-    cursor.close()
+    if IS_SQLITE:
+        cursor = dbapi_connection.cursor()
+        
+        # Enable foreign key constraints
+        cursor.execute("PRAGMA foreign_keys=ON")
+        
+        # Performance optimizations
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA cache_size=10000")
+        cursor.execute("PRAGMA temp_store=MEMORY")
+        cursor.execute("PRAGMA mmap_size=268435456")
+        
+        cursor.close()
 
 # Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

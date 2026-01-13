@@ -111,7 +111,7 @@ export default function PortfolioOverview({
       {/* Enhanced Single Column Layout with Interactive Chart */}
       <div className="flex flex-col items-center w-full">
         {/* Interactive Donut Chart */}
-        <div className="relative w-full max-w-md h-80 mb-6 flex justify-center">
+        <div className="relative w-full max-w-md h-80 mb-6 flex justify-center" style={{ minHeight: '320px' }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie

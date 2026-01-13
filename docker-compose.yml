@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build: ./backend
@@ -7,30 +5,49 @@ services:
       - "8000:8000"
     environment:
       - DEBUG=true
-      - DATABASE_URL=sqlite:///./crypto_portfolio.db
+      # Switch between SQLite and PostgreSQL by commenting/uncommenting
+      # - DATABASE_URL=sqlite:///./data/crypto_portfolio.db
+      - DATABASE_URL=postgresql://crypto_user:crypto_password@postgres:5432/crypto_portfolio
     volumes:
       - ./backend:/app
       - backend_data:/app/data
+      - backup_data:/app/backups
     networks:
       - crypto_network
+    depends_on:
+      - postgres
+    restart: unless-stopped
 
-  # Database service (for future use)
-  # postgres:
-  #   image: postgres:15
-  #   environment:
-  #     POSTGRES_DB: crypto_portfolio
-  #     POSTGRES_USER: crypto_user
-  #     POSTGRES_PASSWORD: crypto_password
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   ports:
-  #     - "5432:5432"
-  #   networks:
-  #     - crypto_network
+  # PostgreSQL Database (Production-ready)
+  postgres:
+    image: postgres:15-alpine
+    container_name: crypto-portfolio-postgres
+    environment:
+      POSTGRES_DB: crypto_portfolio
+      POSTGRES_USER: crypto_user
+      POSTGRES_PASSWORD: crypto_password
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - crypto_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crypto_user -d crypto_portfolio"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   backend_data:
-  # postgres_data:
+    driver: local
+  postgres_data:
+    driver: local
+  backup_data:
+    driver: local
 
 networks:
   crypto_network:
