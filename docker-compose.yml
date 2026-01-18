@@ -1,27 +1,10 @@
-services:
-  backend:
-    build: ./backend
-    ports:
-      - "8000:8000"
-    environment:
-      - DEBUG=true
-      # Switch between SQLite and PostgreSQL by commenting/uncommenting
-      # - DATABASE_URL=sqlite:///./data/crypto_portfolio.db
-      - DATABASE_URL=postgresql://crypto_user:crypto_password@postgres:5432/crypto_portfolio
-    volumes:
-      - ./backend:/app
-      - backend_data:/app/data
-      - backup_data:/app/backups
-    networks:
-      - crypto_network
-    depends_on:
-      - postgres
-    restart: unless-stopped
+version: '3.8'
 
-  # PostgreSQL Database (Production-ready)
+services:
+  # 1. Database (Starts First)
   postgres:
     image: postgres:15-alpine
-    container_name: crypto-portfolio-postgres
+    container_name: VaultX-postgres
     environment:
       POSTGRES_DB: crypto_portfolio
       POSTGRES_USER: crypto_user
@@ -31,15 +14,59 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"
     networks:
-      - crypto_network
+      - vaultx_network
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U crypto_user -d crypto_portfolio"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Backend (Starts Second, depends on DB)
+  backend:
+    build: ./backend
+    container_name: VaultX-backend
+    ports:
+      - "8001:8000"
+    environment:
+      - DEBUG=true
+      - DATABASE_URL=postgresql://crypto_user:crypto_password@postgres:5432/crypto_portfolio
+      # Allow frontend to access backend
+      - ALLOWED_ORIGINS=["http://localhost:3000", "http://127.0.0.1:3000"]
+    volumes:
+      - ./backend:/app
+      - backend_data:/app/data
+      - backup_data:/app/backups
+    networks:
+      - vaultx_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+
+  # 3. Frontend (Starts Last, depends on Backend)
+  frontend:
+    build: ./frontend
+    container_name: VaultX-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      # Browser-side access (Public URL)
+      - NEXT_PUBLIC_API_URL=http://localhost:8001
+    networks:
+      - vaultx_network
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   backend_data:
@@ -50,5 +77,5 @@ volumes:
     driver: local
 
 networks:
-  crypto_network:
+  vaultx_network:
     driver: bridge
