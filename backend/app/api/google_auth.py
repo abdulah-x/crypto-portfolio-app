@@ -2,34 +2,30 @@
 Google OAuth Authentication Endpoints
 """
 from fastapi import APIRouter, HTTPException, Depends, Request
-from fastapi.responses import RedirectResponse
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import Dict, Any, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
-import httpx
+import requests
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+
 
 from app.core.dependencies import get_db
 from app.database.models import User
 from app.core.auth import auth_manager
-from app.services.email_service import email_service
+from app.core.config import settings
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/api/auth", tags=["Google OAuth"])
 
 # Environment variables
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:3000/auth/google/callback")
+GOOGLE_CLIENT_ID = settings.google_client_id
+
 
 # Pydantic models
-class GoogleAuthRequest(BaseModel):
-    email: EmailStr
-    context: str = "signup"  # "signup" or "login"
-
-class OTPVerifyRequest(BaseModel):
-    email: EmailStr
-    otp: str
+class GoogleLoginRequest(BaseModel):
+    token: str
     context: str = "signup"  # "signup" or "login"
 
 class GoogleAuthResponse(BaseModel):
@@ -37,97 +33,57 @@ class GoogleAuthResponse(BaseModel):
     message: str
     data: Optional[Dict[str, Any]] = None
 
-
-@router.post("/google/send-otp", response_model=GoogleAuthResponse)
-async def send_google_otp(
-    request: GoogleAuthRequest,
+@router.post("/google/login", response_model=GoogleAuthResponse)
+async def google_login(
+    request: GoogleLoginRequest,
     db: Session = Depends(get_db)
 ):
     """
-    Send OTP to Gmail for verification
-    Step 1: User enters their Gmail address
+    Login or Signup with Google
+    Accepts an access token or ID token from the frontend
     """
     try:
-        email = request.email.lower()
-        context = request.context
+        # Verify ID token
+        # Using GoogleLogin component returns an ID Token (in credential field)
+        try:
+            token = request.token
+            id_info = id_token.verify_oauth2_token(
+                token, 
+                google_requests.Request(), 
+                GOOGLE_CLIENT_ID,
+                clock_skew_in_seconds=60
+            )
+        except ValueError as e:
+             print(f"Token Verification Error: {str(e)}")
+             raise HTTPException(status_code=400, detail=f"Invalid Google token: {str(e)}")
+
+        email = id_info.get("email")
+        email_verified = id_info.get("email_verified")
+        google_id = id_info.get("sub")
+        picture = id_info.get("picture")
+        given_name = id_info.get("given_name", "")
+        family_name = id_info.get("family_name", "")
         
+        if not email_verified:
+            raise HTTPException(status_code=400, detail="Google email not verified")
+
         # Check if user exists
         existing_user = db.query(User).filter(User.email == email).first()
         
-        # Validation based on context
-        if context == "signup" and existing_user:
-            return GoogleAuthResponse(
-                success=False,
-                message="This email is already registered. Please sign in instead.",
-                data=None
-            )
-        
-        if context == "login" and not existing_user:
-            return GoogleAuthResponse(
-                success=False,
-                message="No account found with this email. Please sign up first.",
-                data=None
-            )
-        
-        # Generate OTP
-        otp = email_service.generate_otp()
-        
-        # Store OTP with context
-        email_service.store_otp(email, otp, expires_in_minutes=10)
-        
-        # Send OTP email
-        email_sent = email_service.send_otp_email(email, otp)
-        
-        if email_sent:
-            return GoogleAuthResponse(
-                success=True,
-                message=f"Verification code sent to {email}",
-                data={"email": email}
-            )
-        else:
-            raise HTTPException(status_code=500, detail="Failed to send verification email")
-            
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error sending OTP: {str(e)}")
-
-
-@router.post("/google/verify-otp", response_model=GoogleAuthResponse)
-async def verify_google_otp(
-    request: OTPVerifyRequest,
-    db: Session = Depends(get_db)
-):
-    """
-    Verify OTP and register/login user with Google account
-    Step 2: User enters OTP received via email
-    """
-    try:
-        email = request.email.lower()
-        otp = request.otp.strip()
-        context = request.context
-        
-        # Verify OTP
-        is_valid, message = email_service.verify_otp(email, otp)
-        
-        if not is_valid:
-            return GoogleAuthResponse(
-                success=False,
-                message=message,
-                data=None
-            )
-        
-        # Check if user already exists
-        existing_user = db.query(User).filter(User.email == email).first()
-        
         if existing_user:
-            # User exists - login
+            # Login
             if not existing_user.is_active:
                 raise HTTPException(status_code=403, detail="Account is disabled")
             
-            # Update last login
+            # Update info if needed
             existing_user.last_login = datetime.utcnow()
+            if not existing_user.oauth_id:
+                existing_user.oauth_id = google_id
+                existing_user.oauth_provider = "google"
+                
             db.commit()
             
-            # Generate access token
+            # Generate token
             access_token = auth_manager.create_access_token({"sub": str(existing_user.id)})
             
             return GoogleAuthResponse(
@@ -142,38 +98,31 @@ async def verify_google_otp(
                         "username": existing_user.username,
                         "first_name": existing_user.first_name,
                         "last_name": existing_user.last_name,
-                        "is_verified": True,  # Google OAuth users are auto-verified
+                        "is_verified": True,
                         "created_at": existing_user.created_at.isoformat() if existing_user.created_at else None
-                    },
-                    "is_new_user": False
+                    }
                 }
             )
         else:
-            # New user - create account
-            # Extract username from email (before @)
-            username = email.split('@')[0]
-            
-            # Ensure username is unique
-            base_username = username
+            # Signup
+            # Create unique username
+            base_username = email.split('@')[0]
+            username = base_username
             counter = 1
             while db.query(User).filter(User.username == username).first():
                 username = f"{base_username}{counter}"
                 counter += 1
             
-            # Extract first name from email (capitalize first letter)
-            first_name = username.capitalize()
-            
-            # Create new user
             new_user = User(
                 email=email,
                 username=username,
-                first_name=first_name,
-                last_name="",  # User can update later
-                hashed_password=auth_manager.get_password_hash(os.urandom(32).hex()),  # Random password (OAuth users don't need it)
+                first_name=given_name,
+                last_name=family_name,
+                hashed_password=auth_manager.get_password_hash(os.urandom(32).hex()),
                 is_active=True,
-                is_verified=True,  # Auto-verify Google OAuth users
+                is_verified=True,
                 oauth_provider="google",
-                oauth_id=email,  # Use email as OAuth ID
+                oauth_id=google_id,
                 created_at=datetime.utcnow(),
                 updated_at=datetime.utcnow()
             )
@@ -182,7 +131,6 @@ async def verify_google_otp(
             db.commit()
             db.refresh(new_user)
             
-            # Generate access token
             access_token = auth_manager.create_access_token({"sub": str(new_user.id)})
             
             return GoogleAuthResponse(
@@ -199,67 +147,12 @@ async def verify_google_otp(
                         "last_name": new_user.last_name,
                         "is_verified": True,
                         "created_at": new_user.created_at.isoformat()
-                    },
-                    "is_new_user": True
+                    }
                 }
             )
-            
+
     except HTTPException:
         raise
     except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error during verification: {str(e)}")
-
-
-@router.post("/google/resend-otp", response_model=GoogleAuthResponse)
-async def resend_google_otp(
-    request: GoogleAuthRequest,
-    db: Session = Depends(get_db)
-):
-    """
-    Resend OTP to Gmail
-    """
-    try:
-        email = request.email.lower()
-        
-        # Generate new OTP
-        otp = email_service.generate_otp()
-        
-        # Store OTP (replaces old one)
-        email_service.store_otp(email, otp, expires_in_minutes=10)
-        
-        # Send OTP email
-        email_sent = email_service.send_otp_email(email, otp)
-        
-        if email_sent:
-            return GoogleAuthResponse(
-                success=True,
-                message=f"Verification code resent to {email}",
-                data={"email": email}
-            )
-        else:
-            raise HTTPException(status_code=500, detail="Failed to resend verification email")
-            
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error resending OTP: {str(e)}")
-
-
-@router.get("/google/check-email")
-async def check_email_exists(
-    email: str,
-    db: Session = Depends(get_db)
-):
-    """
-    Check if email already exists in database
-    """
-    try:
-        email_lower = email.lower()
-        existing_user = db.query(User).filter(User.email == email_lower).first()
-        
-        return {
-            "exists": existing_user is not None,
-            "email": email_lower,
-            "message": "Email already registered" if existing_user else "Email available"
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error checking email: {str(e)}")
+        print(f"Google login error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal authentication error")

@@ -1,72 +1,39 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Mail, Key } from 'lucide-react';
+import { X } from 'lucide-react';
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 
 interface GoogleOAuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (token: string, user: any) => void;
+  onSuccess: (token: string, user: unknown) => void;
   context?: 'signup' | 'login'; // Whether this is signup or login flow
 }
 
 export default function GoogleOAuthModal({ isOpen, onClose, onSuccess, context = 'signup' }: GoogleOAuthModalProps) {
-  const [step, setStep] = useState<'email' | 'otp'>('email');
-  const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [timer, setTimer] = useState(0);
 
   if (!isOpen) return null;
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     setLoading(true);
+    setError('');
 
     try {
-      const response = await fetch('http://localhost:8001/api/auth/google/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, context }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setStep('otp');
-        setTimer(600); // 10 minutes = 600 seconds
-        const countdown = setInterval(() => {
-          setTimer((prev) => {
-            if (prev <= 1) {
-              clearInterval(countdown);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-      } else {
-        setError(data.message || 'Failed to send OTP');
+      if (!credentialResponse.credential) {
+        throw new Error("No credential received");
       }
-    } catch (err: any) {
-      setError('Failed to connect to server. Please try again.');
-      console.error('OTP send error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handleOtpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const response = await fetch('http://localhost:8001/api/auth/google/verify-otp', {
+      // Send the ID token to the backend
+      const response = await fetch('http://localhost:8001/api/auth/google/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp, context }),
+        body: JSON.stringify({
+          token: credentialResponse.credential, // Send the ID Token
+          context
+        }),
       });
 
       const data = await response.json();
@@ -81,46 +48,14 @@ export default function GoogleOAuthModal({ isOpen, onClose, onSuccess, context =
         // Close modal
         onClose();
       } else {
-        setError(data.message || 'Invalid OTP');
+        setError(data.message || 'Google Sign-In failed');
       }
-    } catch (err: any) {
-      setError('Failed to verify OTP. Please try again.');
-      console.error('OTP verify error:', err);
+    } catch (err) {
+      setError('Failed to connect to server. Please try again.');
+      console.error('Google login error:', err);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleResendOtp = async () => {
-    setError('');
-    setLoading(true);
-
-    try {
-      const response = await fetch('http://localhost:8001/api/auth/google/resend-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setTimer(600);
-        setError('');
-      } else {
-        setError(data.message || 'Failed to resend OTP');
-      }
-    } catch (err: any) {
-      setError('Failed to resend OTP');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -148,7 +83,7 @@ export default function GoogleOAuthModal({ isOpen, onClose, onSuccess, context =
           Sign in with Google
         </h2>
         <p className="text-sm text-slate-400 text-center mb-6">
-          {step === 'email' ? 'Enter your Gmail address' : 'Enter the 6-digit code sent to your email'}
+          Connect your Google account to VaultX
         </p>
 
         {/* Error Message */}
@@ -158,90 +93,20 @@ export default function GoogleOAuthModal({ isOpen, onClose, onSuccess, context =
           </div>
         )}
 
-        {/* Email Step */}
-        {step === 'email' && (
-          <form onSubmit={handleEmailSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                <Mail className="w-4 h-4 inline mr-2" />
-                Gmail Address
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your.email@gmail.com"
-                required
-                className="w-full bg-slate-800/50 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-purple-500 transition-colors"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white font-semibold py-3 rounded-xl transition-all disabled:opacity-50"
-            >
-              {loading ? 'Sending...' : 'Send Verification Code'}
-            </button>
-          </form>
-        )}
-
-        {/* OTP Step */}
-        {step === 'otp' && (
-          <form onSubmit={handleOtpSubmit} className="space-y-4">
-            <div className="text-center mb-4">
-              <p className="text-sm text-slate-400">
-                Code sent to: <span className="text-white font-medium">{email}</span>
-              </p>
-              <button
-                type="button"
-                onClick={() => setStep('email')}
-                className="text-xs text-purple-400 hover:text-purple-300 underline mt-1"
-              >
-                Change email
-              </button>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                <Key className="w-4 h-4 inline mr-2" />
-                Verification Code
-              </label>
-              <input
-                type="text"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="000000"
-                maxLength={6}
-                required
-                className="w-full bg-slate-800/50 border border-slate-600 rounded-xl px-4 py-3 text-white text-center text-2xl font-mono tracking-widest placeholder-slate-400 focus:outline-none focus:border-purple-500 transition-colors"
-              />
-            </div>
-
-            {timer > 0 && (
-              <p className="text-xs text-center text-slate-400">
-                Code expires in <span className="text-white font-medium">{formatTime(timer)}</span>
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading || otp.length !== 6}
-              className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white font-semibold py-3 rounded-xl transition-all disabled:opacity-50"
-            >
-              {loading ? 'Verifying...' : 'Verify & Continue'}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleResendOtp}
-              disabled={loading || timer > 540}
-              className="w-full text-sm text-purple-400 hover:text-purple-300 disabled:text-slate-500 disabled:cursor-not-allowed transition-colors"
-            >
-              {timer > 540 ? 'Wait before resending' : 'Resend Code'}
-            </button>
-          </form>
-        )}
+        <div className="flex justify-center w-full">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => {
+              console.error('Google Sign-In Failed');
+              setError('Google Sign-In was unsuccessful. Please try again.');
+            }}
+            theme="filled_blue"
+            size="large"
+            width="350"
+            text="continue_with"
+            shape="pill"
+          />
+        </div>
 
         {/* Info */}
         <p className="mt-6 text-xs text-center text-slate-500">

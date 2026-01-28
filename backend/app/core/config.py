@@ -34,7 +34,13 @@ class Settings(BaseSettings):
     smtp_username: Optional[str] = None
     smtp_password: Optional[str] = None  # Use App Password for Gmail
     smtp_from_email: Optional[str] = None
+    smtp_from_email: Optional[str] = None
     smtp_from_name: str = "VaultX Crypto Portfolio"
+
+    # Google OAuth
+    google_client_id: Optional[str] = None
+    google_client_secret: Optional[str] = None
+    google_redirect_uri: Optional[str] = None
     
     # Security Settings
     enable_api_encryption: bool = True

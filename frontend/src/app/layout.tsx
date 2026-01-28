@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { ReactQueryProvider } from "@/lib/react-query";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -77,9 +78,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ReactQueryProvider>
-            <AuthProvider>
-              {children}
-            </AuthProvider>
+            <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
+              <AuthProvider>
+                {children}
+              </AuthProvider>
+            </GoogleOAuthProvider>
           </ReactQueryProvider>
         </ThemeProvider>
       </body>
