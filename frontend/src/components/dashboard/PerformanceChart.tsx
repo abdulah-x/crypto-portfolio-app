@@ -51,19 +51,10 @@ export default function PerformanceChart({
   
   const currentTimeframe = propTimeframe || selectedTimeframe;
 
-  // Filter data based on timeframe
+  // Use the data as-is since it's already filtered for the selected timeframe
   const filteredData = useMemo(() => {
-    if (currentTimeframe === 'ALL') return data;
-    
-    const days = {
-      '7D': 7,
-      '30D': 30,
-      '90D': 90,
-      '1Y': 365
-    }[currentTimeframe] || 30;
-    
-    return data.slice(-Math.min(days / 30, data.length)); // Approximate monthly data
-  }, [data, currentTimeframe]);
+    return data && data.length > 0 ? data : [];
+  }, [data]);
 
   const formatValue = (value: number) => {
     if (value >= 1000000) {
@@ -131,8 +122,8 @@ export default function PerformanceChart({
       </div>
 
       {/* Chart Container */}
-      <div className="h-80 mt-4 relative" style={{ minHeight: '320px' }}>
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="mt-4 relative" style={{ height: '320px' }}>
+        <ResponsiveContainer width="100%" height={320}>
           <ComposedChart 
             data={filteredData} 
             margin={{ top: 20, right: 30, left: 40, bottom: 20 }}

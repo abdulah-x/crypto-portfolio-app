@@ -111,8 +111,8 @@ export default function PortfolioOverview({
       {/* Enhanced Single Column Layout with Interactive Chart */}
       <div className="flex flex-col items-center w-full">
         {/* Interactive Donut Chart */}
-        <div className="relative w-full max-w-md h-80 mb-6 flex justify-center" style={{ minHeight: '320px' }}>
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="relative w-full max-w-md mb-6 flex justify-center" style={{ height: '320px' }}>
+          <ResponsiveContainer width="100%" height={320}>
             <PieChart>
               <Pie
                 data={processedAllocationData}

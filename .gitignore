@@ -61,6 +61,9 @@ backend/data/test_backup_*.db
 
 # Test Files and Sample Data (exclude from repository)
 backend/test_*.py
+backend/*test*.py
+backend/create_test_user.py
+backend/seed_*.py
 backend/seed_simple.py
 backend/app/database/seeds/sample_data.py
 backend/data/test_portfolio.db

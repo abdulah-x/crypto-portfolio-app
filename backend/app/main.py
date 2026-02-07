@@ -105,6 +105,13 @@ except ImportError as e:
     print(f"⚠️ Password Reset routes import failed: {e}")
     PASSWORD_RESET_AVAILABLE = False
 
+try:
+    from api.email_verification import router as email_verification_router
+    EMAIL_VERIFICATION_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Email Verification routes import failed: {e}")
+    EMAIL_VERIFICATION_AVAILABLE = False
+
 # Include API routes
 app.include_router(auth_router, prefix="/api", tags=["Authentication"])
 app.include_router(portfolio_router, prefix="/api", tags=["Portfolio"])
@@ -116,6 +123,11 @@ app.include_router(binance_test_router, prefix="/api", tags=["Binance Testing"])
 if PASSWORD_RESET_AVAILABLE:
     app.include_router(password_reset_router, prefix="/api", tags=["Password Reset"])
     print("✅ Password Reset routes registered")
+
+if EMAIL_VERIFICATION_AVAILABLE:
+    app.include_router(email_verification_router, prefix="/api", tags=["Email Verification"])
+    print("✅ Email Verification routes registered")
+
 if PORTFOLIO_SYNC_AVAILABLE:
     app.include_router(portfolio_sync_router, prefix="/api", tags=["Portfolio Sync"])
     print("✅ Portfolio Sync routes registered")

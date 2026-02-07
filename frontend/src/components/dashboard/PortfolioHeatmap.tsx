@@ -26,7 +26,7 @@ interface PortfolioHeatmapProps {
 export default function PortfolioHeatmap({ holdings, totalValue }: PortfolioHeatmapProps) {
   const [hoveredAsset, setHoveredAsset] = useState<string | null>(null);
 
-  // Enhanced mock data with more coins and mixed performance
+  // Transform holdings to heatmap data format
   const enhancedHeatmapData: HeatmapData[] = useMemo(() => {
     // Determine color based on performance
     const getPerformanceColor = (change: number) => {
@@ -40,37 +40,15 @@ export default function PortfolioHeatmap({ holdings, totalValue }: PortfolioHeat
       return '#dc2626'; // dark red
     };
 
-    // Add more diverse crypto data with both positive and negative changes
-    const additionalCoins = [
-      { name: 'AVAX', value: 85000, allocation: 4.2, change24h: -8.5, price: 28.50 },
-      { name: 'NEAR', value: 62000, allocation: 3.1, change24h: 12.3, price: 3.80 },
-      { name: 'ATOM', value: 48000, allocation: 2.4, change24h: -3.2, price: 9.20 },
-      { name: 'FTM', value: 35000, allocation: 1.7, change24h: 15.7, price: 0.42 },
-      { name: 'ALGO', value: 28000, allocation: 1.4, change24h: -12.1, price: 0.18 },
-      { name: 'HBAR', value: 22000, allocation: 1.1, change24h: 6.8, price: 0.08 },
-      { name: 'XLM', value: 18000, allocation: 0.9, change24h: -4.5, price: 0.12 },
-      { name: 'VET', value: 15000, allocation: 0.7, change24h: 8.2, price: 0.025 },
-      { name: 'FLOW', value: 12000, allocation: 0.6, change24h: -18.4, price: 0.85 },
-      { name: 'ICP', value: 10000, allocation: 0.5, change24h: 22.1, price: 5.60 }
-    ];
-
-    // Convert original holdings
-    const originalData = holdings.map(holding => ({
+    // Convert holdings to heatmap format
+    return holdings.map(holding => ({
       name: holding.symbol,
       value: holding.marketValue,
       allocation: holding.allocation,
       change24h: holding.change24h,
       price: holding.lastPrice,
       color: getPerformanceColor(holding.change24h)
-    }));
-
-    // Add additional coins with performance colors
-    const additionalData = additionalCoins.map(coin => ({
-      ...coin,
-      color: getPerformanceColor(coin.change24h)
-    }));
-
-    return [...originalData, ...additionalData].sort((a, b) => b.value - a.value);
+    })).sort((a, b) => b.value - a.value);
   }, [holdings]);
 
   // Custom content renderer for treemap cells
@@ -198,8 +176,8 @@ export default function PortfolioHeatmap({ holdings, totalValue }: PortfolioHeat
         Size = Allocation • Color = 24h Performance
       </div>
 
-      <div className="w-full h-80" style={{ minHeight: '320px' }}>
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="w-full" style={{ height: '320px' }}>
+        <ResponsiveContainer width="100%" height={320}>
           <Treemap
             data={enhancedHeatmapData}
             dataKey="value"
