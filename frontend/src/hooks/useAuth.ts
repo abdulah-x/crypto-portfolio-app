@@ -88,50 +88,15 @@ export const useAuthState = () => {
         });
       }
     } catch (error) {
-      console.warn('Backend API not available for token validation, checking local token');
-      
-      // If backend is not available, check if we have a mock token for development
-      const token = localStorage.getItem('vaultx_token');
-      if (token && token.startsWith('mock-jwt-token')) {
-        // Mock user for development
-        const hasCompletedOnboarding = localStorage.getItem('hasCompletedOnboarding') === 'true';
-        const mockUser = {
-          id: 1,
-          username: 'demouser',
-          email: 'demo@vaultx.com',
-          firstName: 'Demo',
-          lastName: 'User',
-          timezone: 'UTC',
-          preferredCurrency: 'USD',
-          isActive: true,
-          isVerified: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          lastLogin: new Date().toISOString(),
-          hasCompletedOnboarding: hasCompletedOnboarding,
-          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face&auto=format&q=80',
-        };
-        
-        setAuthState({
-          user: mockUser,
-          isLoading: false,
-          isAuthenticated: true,
-          error: null,
-        });
-        
-        console.info('✅ Mock authentication restored from local storage');
-      } else {
-        // Unknown token or backend error, clear everything
-        if (token) {
-          localStorage.removeItem('vaultx_token');
-        }
-        setAuthState({
-          user: null,
-          isLoading: false,
-          isAuthenticated: false,
-          error: null,
-        });
-      }
+      console.error('Failed to validate token:', error);
+      // Token is invalid or backend error, clear everything
+      localStorage.removeItem('vaultx_token');
+      setAuthState({
+        user: null,
+        isLoading: false,
+        isAuthenticated: false,
+        error: null,
+      });
     }
   };
 
@@ -160,77 +125,32 @@ export const useAuthState = () => {
         }));
       }
     } catch (error: any) {
-      console.warn('Backend API not available, using mock authentication for development');
+      console.error('Login error:', error);
       
-      // If backend is not available, provide mock authentication for development
-      if (error.message && error.message.includes('Backend service is not available')) {
-        // Mock authentication for development when backend is not available
-        if (email && password) {
-          // Simulate API delay
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Create mock user data
-          const hasCompletedOnboarding = localStorage.getItem('hasCompletedOnboarding') === 'true';
-          const isReturningUser = localStorage.getItem(`user_${email}_returning`) === 'true';
-          
-          const mockUser = {
-            id: parseInt(`${email.replace('@', '').replace('.', '').slice(0, 8)}`) || 1,
-            username: email.split('@')[0],
-            email: email,
-            firstName: 'Demo',
-            lastName: 'User',
-            timezone: 'UTC',
-            preferredCurrency: 'USD',
-            isActive: true,
-            isVerified: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            lastLogin: new Date().toISOString(),
-            hasCompletedOnboarding: hasCompletedOnboarding && isReturningUser,
-            avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face&auto=format&q=80',
-          };
-          
-          // Create mock token
-          const mockToken = 'mock-jwt-token-for-development';
-          localStorage.setItem('vaultx_token', mockToken);
-          
-          setAuthState({
-            user: mockUser,
-            isLoading: false,
-            isAuthenticated: true,
-            error: null,
-          });
-          
-          console.info('✅ Mock login successful for development');
+      let errorMessage = 'Login failed. Please check your credentials.';
+      
+      if (error.response) {
+        // Backend returned an error response
+        if (error.response.status === 401) {
+          errorMessage = 'Invalid email or password';
+        } else if (error.response.status === 403) {
+          errorMessage = 'Account is disabled. Please contact support.';
+        } else if (error.response.data?.detail) {
+          errorMessage = error.response.data.detail;
+        }
+      } else if (error.message) {
+        if (error.message.includes('Network Error') || error.message.includes('ERR_CONNECTION_REFUSED')) {
+          errorMessage = 'Cannot connect to server. Please ensure the backend is running.';
         } else {
-          setAuthState(prev => ({
-            ...prev,
-            isLoading: false,
-            error: 'Please provide both email and password',
-          }));
+          errorMessage = error.message;
         }
-      } else {
-        // Real error from backend
-        let errorMessage = 'Login failed. Please try again.';
-        
-        if (error.message) {
-          if (error.message.includes('Authentication required')) {
-            errorMessage = 'Invalid email or password';
-          } else if (error.message.includes('Validation error')) {
-            errorMessage = error.message;
-          } else if (error.message.includes('Server error')) {
-            errorMessage = 'Server error. Please try again later.';
-          } else {
-            errorMessage = error.message;
-          }
-        }
-        
-        setAuthState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: errorMessage,
-        }));
       }
+      
+      setAuthState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: errorMessage,
+      }));
     }
   };
 
@@ -264,71 +184,36 @@ export const useAuthState = () => {
         }));
       }
     } catch (error: any) {
-      console.warn('Backend API not available, using mock registration for development');
+      console.error('Signup error:', error);
       
-      // If backend is not available, provide mock registration for development
-      if (error.message && error.message.includes('Backend service is not available')) {
-        // Mock registration for development when backend is not available
-        if (email && password && firstName && lastName && username) {
-          // Simulate API delay
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          
-          // Create mock user data - new users should NOT have completed onboarding
-          const mockUser = {
-            id: parseInt(Math.random().toString().slice(2, 10)) || 1,
-            username: username,
-            email: email,
-            firstName: firstName,
-            lastName: lastName,
-            timezone: 'UTC',
-            preferredCurrency: 'USD',
-            isActive: true,
-            isVerified: false, // New users need email verification
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            hasCompletedOnboarding: false, // New users always need onboarding
-            avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face&auto=format&q=80',
-          };
-          
-          // Create mock token
-          const mockToken = 'mock-jwt-token-for-development-' + Date.now();
-          localStorage.setItem('vaultx_token', mockToken);
-          
-          setAuthState({
-            user: mockUser,
-            isLoading: false,
-            isAuthenticated: true,
-            error: null,
-          });
-          
-          console.info('✅ Mock registration successful for development');
-        } else {
-          setAuthState(prev => ({
-            ...prev,
-            isLoading: false,
-            error: 'Please fill in all required fields',
-          }));
-        }
-      } else {
-        // Real error from backend
-        let errorMessage = 'Signup failed. Please try again.';
-        
-        if (error.message) {
-          if (error.message.includes('Validation error')) {
-            errorMessage = error.message;
-          } else if (error.message.includes('Server error')) {
-            errorMessage = 'Server error. Please try again later.';
+      let errorMessage = 'Signup failed. Please try again.';
+      
+      if (error.response) {
+        // Backend returned an error response
+        if (error.response.status === 400) {
+          if (error.response.data?.detail) {
+            errorMessage = error.response.data.detail;
           } else {
-            errorMessage = error.message;
+            errorMessage = 'Invalid signup data. Please check your information.';
           }
+        } else if (error.response.status === 409) {
+          errorMessage = 'Email or username already exists.';
+        } else if (error.response.data?.detail) {
+          errorMessage = error.response.data.detail;
         }
-        
-        setAuthState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: errorMessage,
-        }));
+      } else if (error.message) {
+        if (error.message.includes('Network Error') || error.message.includes('ERR_CONNECTION_REFUSED')) {
+          errorMessage = 'Cannot connect to server. Please ensure the backend is running.';
+        } else {
+          errorMessage = error.message;
+        }
       }
+      
+      setAuthState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: errorMessage,
+      }));
     }
   };
 
@@ -400,39 +285,22 @@ export const useAuthState = () => {
 
   const updateUserProfile = async (updates: Partial<User>) => {
     try {
-      const response = await api.updateUserProfile(updates);
+      const response = await api.auth.updateProfile(updates);
       
-      if (response.success && response.data) {
+      if (response) {
         setAuthState(prev => ({
           ...prev,
-          user: response.data || null,
-        }));
-      } else {
-        // For mock/offline mode, update locally
-        setAuthState(prev => ({
-          ...prev,
-          user: prev.user ? { ...prev.user, ...updates } : null,
+          user: response || null,
         }));
         
-        // If completing onboarding, mark user as returning user for future logins
-        if (updates.hasCompletedOnboarding && authState.user?.email) {
-          localStorage.setItem(`user_${authState.user.email}_returning`, 'true');
+        // If completing onboarding, store locally
+        if (updates.hasCompletedOnboarding) {
           localStorage.setItem('hasCompletedOnboarding', 'true');
         }
       }
     } catch (error: any) {
-      console.warn('Profile update via API failed, updating locally:', error.message);
-      // Fallback to local update
-      setAuthState(prev => ({
-        ...prev,
-        user: prev.user ? { ...prev.user, ...updates } : null,
-      }));
-      
-      // If completing onboarding, mark user as returning user for future logins
-      if (updates.hasCompletedOnboarding && authState.user?.email) {
-        localStorage.setItem(`user_${authState.user.email}_returning`, 'true');
-        localStorage.setItem('hasCompletedOnboarding', 'true');
-      }
+      console.error('Profile update failed:', error.message);
+      throw error;
     }
   };
 

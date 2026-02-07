@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # 1. Database (Starts First)
   postgres:
@@ -19,7 +17,7 @@ services:
       - vaultx_network
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U crypto_user -d crypto_portfolio" ]
+      test: ["CMD-SHELL", "pg_isready -U crypto_user -d crypto_portfolio"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -37,7 +35,7 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       # Allow frontend to access backend
-      - ALLOWED_ORIGINS=["http://localhost:3000", "http://127.0.0.1:3000"]
+      - ALLOWED_ORIGINS=["http://localhost:3100", "http://127.0.0.1:3100"]
     volumes:
       - ./backend:/app
       - backend_data:/app/data
@@ -49,7 +47,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -60,10 +58,11 @@ services:
     build:
       context: ./frontend
       args:
+        - NEXT_PUBLIC_API_URL=http://localhost:8001
         - NEXT_PUBLIC_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
     container_name: VaultX-frontend
     ports:
-      - "3000:3000"
+      - "3100:3000"
     environment:
       # Browser-side access (Public URL)
       - NEXT_PUBLIC_API_URL=http://localhost:8001

@@ -98,6 +98,13 @@ except ImportError as e:
     print(f"⚠️ Google OAuth routes import failed: {e}")
     GOOGLE_AUTH_AVAILABLE = False
 
+try:
+    from api.password_reset import router as password_reset_router
+    PASSWORD_RESET_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Password Reset routes import failed: {e}")
+    PASSWORD_RESET_AVAILABLE = False
+
 # Include API routes
 app.include_router(auth_router, prefix="/api", tags=["Authentication"])
 app.include_router(portfolio_router, prefix="/api", tags=["Portfolio"])
@@ -106,6 +113,9 @@ app.include_router(pnl_router, prefix="/api", tags=["P&L"])
 app.include_router(binance_test_router, prefix="/api", tags=["Binance Testing"])
 
 # Include advanced features if available
+if PASSWORD_RESET_AVAILABLE:
+    app.include_router(password_reset_router, prefix="/api", tags=["Password Reset"])
+    print("✅ Password Reset routes registered")
 if PORTFOLIO_SYNC_AVAILABLE:
     app.include_router(portfolio_sync_router, prefix="/api", tags=["Portfolio Sync"])
     print("✅ Portfolio Sync routes registered")

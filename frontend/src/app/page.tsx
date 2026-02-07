@@ -76,14 +76,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-800 text-white relative overflow-hidden">
-      {/* Development Mode Banner */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border-b border-amber-500/30 px-4 py-2 text-center z-50 backdrop-blur-sm">
-          <p className="text-amber-200 text-sm font-medium">
-            🔧 Development Mode: Mock authentication is enabled. Any email/password will work for testing.
-          </p>
-        </div>
-      )}
       
       {/* Enhanced Dynamic Background */}
       <div className="absolute inset-0 overflow-hidden">
